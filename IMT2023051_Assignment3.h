@@ -8,7 +8,7 @@ using namespace std;
 // Enum for status codes
 enum status {
     OK,//prints 0 for success
-    DUPLICATE_VENUE,
+    DUPLICATE_VENUE,//used when venue names are same within a country
     NO_VENUE,
     INVALID_DATE_TIME,
     NO_EVENT,
@@ -187,3 +187,12 @@ public:
     int getCapacity() const;
 };
 
+class VenueManager{
+private:
+    vector<Venue> venues;
+
+public:
+    status addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity);
+    status delVenue(string vName, string countryName);//a venue cant be deleted if it has any active or future reservations
+    status showVenues(string city, string state, string postalCode, string country) const;
+};

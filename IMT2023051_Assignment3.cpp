@@ -273,3 +273,34 @@ int Venue::getCapacity() const {
 
 
 
+//VenueManager class methods
+
+status VenueManager::addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity){
+    //venue names must be unique within a country
+    //so i'll have to iterate through the vector venues and check all the venues for same name and coutry
+    for(auto v:venues){
+        if(v.getName()==name && v.getCountry()==country){
+            return DUPLICATE_VENUE;
+        }
+    }
+    //now I can directly add
+    Venue newVenue=Venue(name,city,addr,state,postalCode,country,capacity);
+    venues.push_back(newVenue);
+    return OK;
+}
+
+status VenueManager::showVenues(string city, string state, string postalCode, string country) const{
+    //if some parameter isn't given in the command for showVenues- I'll make it default to ""
+    int matching=0;
+    string s;//i'll store everything in this string till i iterate through the entire vector and then first print matching
+    for(auto v:venues){
+        if((city=="" || city==v.getCity()) && (state=="" || state==v.getState()) && (postalCode=="" || postalCode==v.getPostalCode()) && (country=="" || country==v.getCountry())){
+            matching++;
+            string temp=v.getName()+" "+v.getCity()+":"+v.getState()+":"+v.getState()+":"+v.getPostalCode()+":"+v.getCountry()+" "+to_string(v.getCapacity())+"\n";
+            s+=temp;
+        }
+    }
+    cout<<matching<<endl;
+    cout<<s;
+    return NOPRINT_NEED;
+}
