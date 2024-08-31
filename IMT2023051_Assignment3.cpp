@@ -4,6 +4,7 @@
 
 using namespace std;
 
+
 // Date class method implementations
 
 bool Date::isLeapYear(int year) const {
@@ -43,6 +44,12 @@ bool Date::isValid() const {
     return isValidDay(day, month, year);
 }
 
+void Date::printDate() const{
+    cout<<year<<"-"<<month<<"-"<<day;
+    // cout.flush();
+}
+
+
 // Congregation class method implementations
 
 Congregation::Congregation(string name, string type, Date startDate, Date endDate)
@@ -50,6 +57,10 @@ Congregation::Congregation(string name, string type, Date startDate, Date endDat
 
 string Congregation::getName() const {
     return _name;
+}
+
+string Congregation::getType() const {
+    return _type;
 }
 
 Date Congregation::getStartDate() const {
@@ -60,10 +71,48 @@ Date Congregation::getEndDate() const {
     return _endDate;
 }
 
+
 // CongregationManager class method implementations
 
-void CongregationManager::addCongregation(string name, string type, Date startDate, Date endDate) {
-    
+status CongregationManager::addCongregation(string name, string type, Date startDate, Date endDate) {
+    //we must keep the congregation names unique across the system
+    //so I need to check all the congregations in the vector, if any name matches, return ERROR_CODE
+    for(auto cong:congs){
+        if(cong.getName()==name)
+            return DUPLICATE_CONG_NAME;
+    }
     Congregation newCongregation(name, type, startDate, endDate);
     congs.push_back(newCongregation);
+    return OK;
 }
+
+status CongregationManager::showCongregations() const{
+    cout<<congs.size();
+    for(auto cong:congs){
+        cout<<cong.getName()<<" "<<cong.getType()<<" ";
+        cong.getStartDate().printDate();
+        cout<<" ";
+        cong.getEndDate().printDate();
+        cout<<endl;
+    }
+    return NOPRINT_NEED;
+}
+
+status CongregationManager::delCongregation(string name){
+    //i also have to delete all the reservations for this congregation
+    //first I'll iterate through the list of congs and match it with the given name
+    for(auto it=congs.begin(); it!=congs.end();){
+        if(it->getName()==name){
+            //this is the congregation to delete
+            congs.erase(it);//i'll deal with deleting the reservations in the destructor of the congregation
+            return OK;
+        }
+        else{
+            it++;
+        }  
+    }
+    return CONG_NOT_FOUND;
+}
+
+
+

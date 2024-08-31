@@ -7,7 +7,7 @@ using namespace std;
 
 // Enum for status codes
 enum status {
-    OK,
+    OK,//prints 0 for success
     DUPLICATE_VENUE,
     NO_VENUE,
     INVALID_DATE_TIME,
@@ -15,10 +15,19 @@ enum status {
     TIME_CONFLICT,
     MEMORY_ERROR,
     FORMAT_ERROR,
-    NOPRINT_NEED
+    NOPRINT_NEED,
+    DUPLICATE_CONG_NAME,
+    CONG_NOT_FOUND
 };
 
-// Date class declaration
+class Date;
+class Venue;
+class VenueManager;
+class CongregationManager;
+class Congregation;
+class Event;
+
+
 class Date {
 private:
     int day;
@@ -39,6 +48,9 @@ public:
 
     // Method to validate the date
     bool isValid() const;
+    
+    //Method to print date
+    void printDate() const;
 };
 
 class Venue;
@@ -55,9 +67,11 @@ private:
 public:
     // Constructor
     Congregation(string name, string type, Date startDate, Date endDate);
-
+    // Destructor
+    ~Congregation();//have to delete all the reservations inside the venues for this Congregation here
     // Getter methods
     string getName() const;
+    string getType() const;
     Date getStartDate() const;
     Date getEndDate() const;
 };
@@ -65,8 +79,10 @@ public:
 // CongregationManager class declaration
 class CongregationManager {
 private:
-    vector<Congregation> congs;
+    vector<Congregation> congs;//congs.size() will now give the no. of present congregations
 
 public:
-    void addCongregation(string name, string type, Date startDate, Date endDate);
+    status addCongregation(string name, string type, Date startDate, Date endDate);
+    status showCongregations() const;
+    status delCongregation(string name);
 };
