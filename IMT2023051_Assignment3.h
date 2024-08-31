@@ -20,15 +20,71 @@ enum status {
     CONG_NOT_FOUND
 };
 
+class Time;
 class Date;
 class Venue;
 class VenueManager;
 class CongregationManager;
 class Congregation;
 class Event;
+struct reservation;
 
+// struct Event{
+//     string name;
+//     int s,e;//start and end time
+//     Event *next=nullptr;//initialized to null by default
 
-class Date {
+//     Event(string name,int s,int e);
+// };
+
+// struct reservation{
+//     //this will have the start and end date and the name of the congregation, which has reserved the venue
+//     //this will also store the linked list of events
+//     Date s,e;
+//     string congName;
+
+// };
+
+class Time {
+private:
+    int hour;
+    int min; 
+
+    bool isValidHour(int h) const {
+        return h >= 0 && h <= 23;
+    }
+
+    bool isValidMinute(int m) const {
+        return m >= 0 && m < 60 && (m % 15 == 0);
+    }
+
+public:
+    // Constructor
+    Time(int h, int m);
+
+    // Getter methods
+    int getHour() const;
+    int getMinute() const;
+
+    // Method to validate the time
+    bool isValid() const;
+
+    // Method to calculate the difference between two times in minutes
+    int differenceInMinutes(const Time& other) const;//this will be useful if both the events are scheduled in the same day
+
+    // Overloading the comparison operators
+    bool operator<(const Time& other) const;
+    bool operator<=(const Time& other) const;
+    bool operator>(const Time& other) const;
+    bool operator>=(const Time& other) const;
+    bool operator==(const Time& other) const;
+    bool operator!=(const Time& other) const;
+
+    // for printing
+    friend ostream& operator<<(ostream& os, const Time& time);
+};
+
+class Date {//this is a class for storing and validating dates
 private:
     int day;
     int month;
@@ -51,11 +107,20 @@ public:
     
     //Method to print date
     void printDate() const;
+    friend ostream& operator<<(ostream& os, const Date& date);
+
+    //operator overloading methods
+    bool operator<(const Date& other) const;
+    bool operator<=(const Date& other) const;
+    bool operator>(const Date& other) const;
+    bool operator>=(const Date& other) const;
+    bool operator==(const Date& other) const;
+    bool operator!=(const Date& other) const;
+
 };
 
-class Venue;
 
-// Congregation class declaration
+// Congregation class 
 class Congregation {
 private:
     string _name;
@@ -86,3 +151,32 @@ public:
     status showCongregations() const;
     status delCongregation(string name);
 };
+
+
+
+//venue class
+
+class Venue {
+private:
+    string name;
+    string city;
+    string addr;
+    string state;
+    string postalCode;
+    string country;
+    int capacity;
+
+public:
+    // Constructor
+    Venue(string name, string city, string addr, string state, string postalCode, string country, int capacity);
+
+    // Getter methods
+    string getName() const;
+    string getCity() const;
+    string getAddr() const;
+    string getState() const;
+    string getPostalCode() const;
+    string getCountry() const;
+    int getCapacity() const;
+};
+
