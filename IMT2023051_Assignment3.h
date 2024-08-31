@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include <sstream>
 using namespace std; 
 
 // Enum for status codes
@@ -26,6 +26,8 @@ class Venue;
 class VenueManager;
 class CongregationManager;
 class Congregation;
+struct Event;
+struct Reservation;
 
 
 class Time {
@@ -103,6 +105,28 @@ public:
 };
 
 
+struct Event{
+    Date d;
+    string name;
+    Time s,e;//start and end time
+    Event *next=nullptr;//initialized to null by default
+
+    Event(string name,Time s,Time e, Date d);
+};
+
+struct Reservation{
+    //this will have the start and end date and the name of the congregation, which has reserved the venue
+    //this will also store the linked list of events
+    Date s,e;
+    string congName;
+    Event * eList=nullptr;
+    Reservation * next=nullptr;//to make it a linked list of reservations
+    //constructor
+    Reservation(string name,Date s,Date e);
+
+};
+
+
 // Congregation class 
 class Congregation {
 private:
@@ -148,7 +172,7 @@ private:
     string postalCode;
     string country;
     int capacity;
-
+    Reservation * resList=nullptr;// this is to sort the reservation linked list in chronological order of dates
 public:
     // Constructor
     Venue(string name, string city, string addr, string state, string postalCode, string country, int capacity);

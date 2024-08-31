@@ -1,7 +1,4 @@
-#include <iostream>
-#include <sstream>
 #include "IMT2023051_Assignment3.h"
-#include "Reservation_Event.h"
 using namespace std;
 
 //Time class methods
@@ -154,19 +151,19 @@ ostream& operator<<(ostream& os, const Date& date) {
     return os;
 }
 
+//Reservation methods
 
-
-// //Event class methods
-// Event::Event(string name,Time s, Time e)
-//     :name(name),s(s),e(e) {}
-
+Reservation::Reservation(string name, Date s, Date e) 
+    : congName(name), s(s), e(e) {}
 
 
 
-// //Reservation class methods
+//Event class methods
 
-// Reservation(string name,Date s,Date e)
-//     :congname(name),s(s),e(e){}
+Event::Event(string name,Time s, Time e, Date d)
+    :name(name),s(s),e(e),d(d) {}
+
+
 
 
 
