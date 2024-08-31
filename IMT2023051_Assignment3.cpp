@@ -1,6 +1,8 @@
-#include "IMT2023051_Assignment3.h"
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include "IMT2023051_Assignment3.h"
+
+using namespace std;
 
 // Date class method implementations
 
@@ -43,10 +45,10 @@ bool Date::isValid() const {
 
 // Congregation class method implementations
 
-Congregation::Congregation(std::string name, std::string type, Date startDate, Date endDate)
+Congregation::Congregation(string name, string type, Date startDate, Date endDate)
     : _name(name), _type(type), _startDate(startDate), _endDate(endDate) {}
 
-std::string Congregation::getName() const {
+string Congregation::getName() const {
     return _name;
 }
 
@@ -60,26 +62,8 @@ Date Congregation::getEndDate() const {
 
 // CongregationManager class method implementations
 
-// void CongregationManager::addCongregation(std::string name, std::string type, std::string sDateStr, std::string eDateStr) {
-//     // Helper function to convert string to Date
-//     auto stringToDate = [](const std::string& dateStr) -> Date {
-//         std::istringstream iss(dateStr);
-//         int day, month, year;
-//         char delimiter;
-//         if (iss >> year >> delimiter >> month >> delimiter >> day) {
-//             return Date(day, month, year);
-//         }
-//         return Date(0, 0, 0); // Return an invalid date if parsing fails
-//     };
-
-//     Date startDate = stringToDate(sDateStr);
-//     Date endDate = stringToDate(eDateStr);
-
-//     if (!startDate.isValid() || !endDate.isValid()) {
-//         std::cerr << "Invalid date(s) provided." << std::endl;
-//         return;
-//     }
-
-//     Congregation newCongregation(name, type, startDate, endDate);
-//     congs.push_back(newCongregation);
-// }
+void CongregationManager::addCongregation(string name, string type, Date startDate, Date endDate) {
+    
+    Congregation newCongregation(name, type, startDate, endDate);
+    congs.push_back(newCongregation);
+}
