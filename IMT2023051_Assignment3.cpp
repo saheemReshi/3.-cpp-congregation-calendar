@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include "IMT2023051_Assignment3.h"
-
+#include "Reservation_Event.h"
 using namespace std;
 
 //Time class methods
@@ -155,6 +155,23 @@ ostream& operator<<(ostream& os, const Date& date) {
 }
 
 
+
+// //Event class methods
+// Event::Event(string name,Time s, Time e)
+//     :name(name),s(s),e(e) {}
+
+
+
+
+// //Reservation class methods
+
+// Reservation(string name,Date s,Date e)
+//     :congname(name),s(s),e(e){}
+
+
+
+
+
 // Congregation class method implementations
 
 Congregation::Congregation(string name, string type, Date startDate, Date endDate)
@@ -199,11 +216,6 @@ status CongregationManager::addCongregation(string name, string type, Date start
 status CongregationManager::showCongregations() const{
     cout<<congs.size();
     for(auto cong:congs){
-        // cout<<cong.getName()<<" "<<cong.getType()<<" ";
-        // cong.getStartDate().printDate();
-        // cout<<" ";
-        // cong.getEndDate().printDate();
-        // cout<<endl;
         cout<<cong.getName()<<" "<<cong.getType()<<" "<<cong.getStartDate()<<" "
             <<cong.getEndDate()<<endl;
     }

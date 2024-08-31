@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -26,24 +26,7 @@ class Venue;
 class VenueManager;
 class CongregationManager;
 class Congregation;
-class Event;
-struct reservation;
 
-// struct Event{
-//     string name;
-//     int s,e;//start and end time
-//     Event *next=nullptr;//initialized to null by default
-
-//     Event(string name,int s,int e);
-// };
-
-// struct reservation{
-//     //this will have the start and end date and the name of the congregation, which has reserved the venue
-//     //this will also store the linked list of events
-//     Date s,e;
-//     string congName;
-
-// };
 
 class Time {
 private:
@@ -141,7 +124,7 @@ public:
     Date getEndDate() const;
 };
 
-// CongregationManager class declaration
+// CongregationManager class 
 class CongregationManager {
 private:
     vector<Congregation> congs;//congs.size() will now give the no. of present congregations
