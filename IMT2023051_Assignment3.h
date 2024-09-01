@@ -171,6 +171,8 @@ public:
     Date getEndDate() const;
     void addReservation(const CongVenueResData& data);
     void showReserved() const;
+    status removeReservation(const string& vName, const string& countryName);
+
 };
 
 // CongregationManager class 
@@ -186,6 +188,10 @@ public:
     bool congExists(string name) const;
     void getDatesForCong(string congName, Date &start, Date &end) const;//here I'm using references for getting the start and end date of a particular congregaion.
     void addReservationToCong(string congName, const CongVenueResData& data);
+
+    // Method to remove a reservation from the `_reserved` vector of a congregation// this will be called when freeVenue will be called
+    status removeReservationFromCongregation(string congName, string vName, string countryName);
+       
 };
 
 
@@ -223,6 +229,7 @@ public:
     //methods for dealing with events
     status addEvent(string eName,string congName, Date d, Time from, Time to);
     status showEvents(Date d) const;
+    status freeReservation(string congName);
     
 };
 

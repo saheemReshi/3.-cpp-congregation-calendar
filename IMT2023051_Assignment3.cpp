@@ -266,6 +266,17 @@ void Congregation::showReserved() const{
 }
 
 
+status Congregation::removeReservation(const string& vName, const string& countryName){
+    for (auto it = _reserved.begin(); it != _reserved.end(); ++it) {
+        if (it->name == vName && it->country == countryName) {
+            _reserved.erase(it);
+            return OK;
+        }
+    }
+    return NO_RESERVATION_OR_CONG;
+}
+
+
 // CongregationManager class methods
 
 status CongregationManager::addCongregation(string name, string type, Date startDate, Date endDate) {
@@ -350,6 +361,15 @@ status CongregationManager::showReserved(string congName) const{
     return CONG_NOT_FOUND;
 }
 
+
+status CongregationManager::removeReservationFromCongregation(string congName, string vName, string countryName){
+    for (auto& cong : congs) {
+        if (cong.getName() == congName) {
+            return cong.removeReservation(vName, countryName);
+        }
+    }
+    return CONG_NOT_FOUND;
+}
 
 
 //Venue class methods
@@ -536,6 +556,49 @@ status Venue::showEvents(Date d) const {
 }
 
 
+status Venue::freeReservation(string congName) {
+    Reservation* current = resList;
+    Reservation* prev = nullptr;
+
+    while (current != nullptr) {
+        if (current->congName == congName) {
+            // Remove the reservation
+            if (prev == nullptr) {
+                resList = current->next;  // Remove the first node
+            } else {
+                prev->next = current->next;  // Bypass the current node
+            }
+            delete current;
+
+            // Now remove all events associated with this congregation
+            Event* eCurrent = eList;
+            Event* ePrev = nullptr;
+
+            while (eCurrent != nullptr) {
+                if (eCurrent->cName == congName) {
+                    if (ePrev == nullptr) {
+                        eList = eCurrent->next;  // Remove the first event
+                    } else {
+                        ePrev->next = eCurrent->next;  // Bypass the current event
+                    }
+                    Event* temp = eCurrent;
+                    eCurrent = eCurrent->next;
+                    delete temp;  // Delete the event
+                } else {
+                    ePrev = eCurrent;
+                    eCurrent = eCurrent->next;
+                }
+            }
+
+            return OK;  // Successfully removed the reservation and associated events
+        }
+        prev = current;
+        current = current->next;
+    }
+    return NO_RESERVATION_OR_CONG;  // No matching reservation found
+}
+
+
 
 
 //VenueManager class methods
@@ -593,6 +656,16 @@ status VenueManager::reserveVenue(string vName, string countryName, string congN
     }
     return VENUE_MANAGER_RESERVE_VENUE_EXCEPTION;
 }
+
+status VenueManager::freeVenue(string vName, string countryName, string congName) {
+    for (Venue &venue : venues) {
+        if (venue.getName() == vName && venue.getCountry() == countryName) {
+            return venue.freeReservation(congName);
+        }
+    }
+    return NO_VENUE;  // Venue not found
+}
+
 
 
 CongVenueResData VenueManager::getDetailsOfVenue(string vName, string countryName) const{
@@ -707,6 +780,22 @@ status Calendar::showEvents(string venueName, string venueCountry, Date d) const
 
 }
 
+status Calendar::freeVenue(string vName, string countryName, string congName) {
+    status venueStatus = vm.freeVenue(vName, countryName, congName);
+    
+    if (venueStatus == OK) {
+        // Also remove the reservation from the congregation's _reserved vector
+        status congStatus = cm.removeReservationFromCongregation(congName, vName, countryName);
+        
+        if (congStatus != OK) {
+            return congStatus;  // Return error if reservation removal fails
+        }
+    }
+
+    return venueStatus;  // Return the status of the venue freeing operation
+}
+
+
 
 
 
@@ -801,7 +890,6 @@ int main() {
 
     return 0;
 }
-*/
 
 int main() {
     // Create a Calendar object
@@ -866,4 +954,96 @@ int main() {
 
     return 0;
 }
+
+
+*/
+
+
+
+int main() {
+    // Create a Calendar object
+    Calendar cal;
+
+    // Test Case 1: Add Congregations
+    std::cout << "Adding Congregations:" << std::endl;
+    std::cout << "Paris Olympics 2024: " 
+              << cal.addCongregation("Paris Olympics 2024", "Games", Date(1, 10, 2024), Date(28, 10, 2024)) << std::endl;
+    std::cout << "U-17 Football World Cup: " 
+              << cal.addCongregation("U-17 Football World Cup", "Games", Date(1, 11, 2024), Date(15, 11, 2024)) << std::endl;
+    std::cout << "Summer Fest: " 
+              << cal.addCongregation("Summer Fest", "Concert", Date(1, 11, 2024), Date(5, 11, 2024)) << std::endl;
+    std::cout << std::endl;
+
+    // Test Case 2: Show Congregations
+    std::cout << "Showing Congregations:" << std::endl;
+    cal.showCongregations();
+    std::cout << std::endl;
+
+    // Test Case 3: Add Venues
+    std::cout << "Adding Venues:" << std::endl;
+    std::cout << "Paris stadium: " 
+              << cal.addVenue("Paris stadium", "ParisStadium", "Paris", "Ile-de-France", "932100", "France", 20000) << std::endl;
+    std::cout << "Lyon stadium: " 
+              << cal.addVenue("Lyon stadium", "LyonStadium", "Lyon", "Auvergne-Rhône-Alpes", "69001", "France", 10000) << std::endl;
+    std::cout << "Parc des Princes: " 
+              << cal.addVenue("Parc des Princes", "FootballStadium", "Paris", "Ile-de-France", "75016", "France", 50000) << std::endl;
+    std::cout << std::endl;
+
+    // Test Case 4: Show Venues based on Location
+    std::cout << "Showing Venues in Paris, Ile-de-France, France:" << std::endl;
+    cal.showVenues("Paris", "Ile-de-France", "", "France");
+    std::cout << std::endl;
+
+    // Test Case 5: Reserve Venue
+    std::cout << "Reserving Venues for Paris Olympics 2024:" << std::endl;
+    std::cout << "Paris stadium, France: " 
+              << cal.reserveVenue("Paris stadium", "France", "Paris Olympics 2024") << std::endl;
+    std::cout << "Lyon stadium, France: " 
+              << cal.reserveVenue("Lyon stadium", "France", "Paris Olympics 2024") << std::endl;
+    std::cout << "Parc des Princes, France: " 
+              << cal.reserveVenue("Parc des Princes", "France", "U-17 Football World Cup") << std::endl;
+    std::cout << std::endl;
+
+    // Test Case 6: Show Reservations for an Existing Congregation
+    std::cout << "Showing Reservations for Paris Olympics 2024:" << std::endl;
+    cal.showReserved("Paris Olympics 2024");
+    std::cout << std::endl;
+
+    // Test Case 7: Free a Venue
+    std::cout << "Freeing Lyon stadium for Paris Olympics 2024:" << std::endl;
+    std::cout << "Result: " 
+              << cal.freeVenue("Lyon stadium", "France", "Paris Olympics 2024") << std::endl;
+    std::cout << std::endl;
+
+    // Test Case 8: Show Reservations for Paris Olympics 2024 After Freeing a Venue
+    std::cout << "Showing Reservations for Paris Olympics 2024 (After Freeing Lyon stadium):" << std::endl;
+    cal.showReserved("Paris Olympics 2024");
+    std::cout << std::endl;
+
+    // Test Case 9: Add Events to Venues
+    std::cout << "Adding Events to Paris stadium for Paris Olympics 2024:" << std::endl;
+    std::cout << "Javelin Throw (12:00 - 15:00, 2024-10-01): " 
+              << cal.addEvent( "Javelin Throw","Paris Olympics 2024", "Paris stadium", "France", Date(1, 10, 2024), Time(12, 0), Time(15, 0)) << std::endl;
+    std::cout << "Pole Vault (18:00 - 21:00, 2024-10-01): " 
+              << cal.addEvent("Pole Vault","Paris Olympics 2024", "Paris stadium", "France", Date(1, 10, 2024), Time(18, 0), Time(21, 0)) << std::endl;
+    std::cout << "5000m Mens (12:00 - 15:00, 2024-10-02): " 
+              << cal.addEvent("5000m Mens","Paris Olympics 2024", "Paris stadium", "France", Date(2, 10, 2024), Time(12, 0), Time(15, 0)) << std::endl;
+    std::cout << "Spain vs England (18:00 - 21:00, 2024-11-02): " 
+              << cal.addEvent("Spain vs England","U-17 Football World Cup", "Parc des Princes", "France", Date(2, 11, 2024), Time(18, 0), Time(21, 0)) << std::endl;
+    std::cout << std::endl;
+
+    // Test Case 10: Show Events for a Venue on a Specific Date
+    std::cout << "Showing Events for Paris stadium, France on 2024-10-01:" << std::endl;
+    cal.showEvents("Paris stadium", "France", Date(1, 10, 2024));
+    std::cout << std::endl;
+
+    // Test Case 11: Show Events for Parc des Princes, France on 2024-11-02
+    std::cout << "Showing Events for Parc des Princes, France on 2024-11-02:" << std::endl;
+    cal.showEvents("Parc des Princes", "France", Date(2, 11, 2024));
+    std::cout << std::endl;
+
+    return 0;
+}
+
+
 
