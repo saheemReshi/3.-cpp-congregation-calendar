@@ -458,7 +458,7 @@ status Venue::addEvent(string eName,string congName, Date d, Time from, Time to)
     }
     
     // Create the new event
-    Event* newEvent = new Event("Event Name", congName, from, to, d); // Placeholder event name, should be passed as a parameter
+    Event* newEvent = new Event(eName, congName, from, to, d); // Placeholder event name, should be passed as a parameter
 
     Time s=from,e=to;
     //now I know that such a reservation exits for this congName, now i'll insert in the eventList,ensuring chronological order of date and time
@@ -467,6 +467,8 @@ status Venue::addEvent(string eName,string congName, Date d, Time from, Time to)
         prev=current;
         current=current->next;
     }
+    // cout<<"In Venue::addEvent"<<endl;
+        // cout<<"move on condn"<<endl;
     while(current!=nullptr){//here I dont need to break out if date >d bcz till then if event isn't inserted, TIME_CONFLICT will be retruned
         if(current->e<s){
             //move on condn
@@ -487,10 +489,52 @@ status Venue::addEvent(string eName,string congName, Date d, Time from, Time to)
             break;
         }
     }
-    newEvent->next=current;
-    prev->next=newEvent;
+    if (prev == nullptr) { // Insert at the beginning
+        newEvent->next = eList;
+        eList = newEvent;
+    } else if(current){ // Insert in the middle
+        newEvent->next = prev->next;
+        prev->next = newEvent;
+    }else{
+        //insert in end
+        if(prev->timeGap_30(*newEvent)==false ){
+            delete newEvent;
+            return TIME_CONFLICT_EVENT_30MIN;
+        }
+        newEvent->next = prev->next;
+        prev->next = newEvent;
+    }
+    // newEvent->next=current;
+    // prev->next=newEvent;
     return OK;
 }
+
+status Venue::showEvents(Date d) const {
+    // Pointer to traverse the event list
+    Event* current = eList;
+    int eventCount = 0;
+    vector<Event*> eventsOnDate; // To store events for the specified date
+
+    // Traverse the event list to find events on the specified date
+    while (current != nullptr) {
+        if (current->d == d) { // If the date matches, store the event
+            eventsOnDate.push_back(current);
+            ++eventCount;
+        }
+        current = current->next;
+    }
+
+    // Print the number of events found
+    cout << eventCount << endl;
+
+    // Print event details if any events were found
+    for (Event* event : eventsOnDate) {
+        cout << event->eName << " " << event->s << " " << event->e << endl;
+    }
+
+    return NOPRINT_NEED;
+}
+
 
 
 
@@ -569,10 +613,23 @@ status VenueManager::addEvent(string eName,string congName, string vName, string
     for(auto &v:venues){
         if(v.getName()==vName && v.getCountry()==countryName){
             //now pass this to the Venue class
+            // cout<<"In VM::addEvent"<<endl;
+
             return v.addEvent(eName,congName,d,from,to);
         }
     }
     return NO_VENUE;//when no such venue exists
+}
+
+status VenueManager::showEvents(string venueName, string countryName, Date d) const {
+    // Find the venue in the vector
+    for (auto venue : venues) {
+        if (venue.getName() == venueName && venue.getCountry() == countryName) {
+            // Call the showEvents method of the Venue class
+            return venue.showEvents(d);
+        }
+    }
+    return NO_VENUE; // If venue was not found in the vector
 }
 
 
@@ -639,15 +696,21 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
 status Calendar::addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to){
     /*addEvent <congregation-name-string> <venueName-string> <venueCountry-string> <date-string> 
     <fromTime-string> <toTime-string> <eventName-string>*/
-
+    // cout<<"In Cal::addEvent"<<endl;
     //here first I've to search for the venue so I'll pass this to the venueManager
-    vm.addEvent(eName,congName,vName,countryName,d,from,to);
+    return vm.addEvent(eName,congName,vName,countryName,d,from,to);
+}
+
+
+status Calendar::showEvents(string venueName, string venueCountry, Date d) const {
+    return vm.showEvents(venueName,venueCountry,d);
+
 }
 
 
 
 
-
+/*
 int main() {
     // Create a Calendar object
     Calendar cal;
@@ -699,3 +762,108 @@ int main() {
 
     return 0;
 }
+
+int main() {
+    // Create Calendar object
+    Calendar calendar;
+
+    // Add congregations
+    calendar.addCongregation("MadMax Tour India 2024", "Concert", Date(26, 7, 2024), Date(29, 7, 2024));
+    calendar.addCongregation("Paris Olympics 2024", "Games", Date(26, 9, 2024), Date(5, 10, 2024));
+    calendar.addCongregation("Summer Fest 2025", "Concert", Date(1, 6, 2025), Date(15, 6, 2025));
+
+    // Show all congregations
+    calendar.showCongregations();
+
+    // Add venues
+    calendar.addVenue("Stade de France", "Bandra-East", "Saint-Denis", "Ile-de-France", "932100", "France", 80000);
+    calendar.addVenue("Wembley Stadium", "Kormangala", "London", "England", "HA9000", "UK", 90000);
+    calendar.addVenue("Olympic Stadium", "JPNagar", "Montreal", "Quebec", "H1V3N7", "Canada", 60000);
+
+    // Show venues in London, England, UK
+    calendar.showVenues("London", "England", "", "UK");
+
+    // Reserve venues
+    calendar.reserveVenue("Stade de France", "France", "Paris Olympics 2024");
+    calendar.reserveVenue("Wembley Stadium", "UK", "Paris Olympics 2024");
+
+    // Show reservations for specific congregations
+    calendar.showReserved("Paris Olympics 2024");
+
+    // Add events
+    calendar.addEvent("Opening Ceremony", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(9, 0), Time(11, 0));
+    calendar.addEvent("Athletics - Morning Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(11, 15), Time(13, 30));
+    calendar.addEvent("Athletics - Night Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(20, 30), Time(23, 45));
+    calendar.addEvent("Football - Quarter Final", "Paris Olympics 2024", "Stade de France", "France", Date(28, 9, 2024), Time(0, 0), Time(2, 0));
+
+    // Show events for a specific date
+    calendar.showEvents("Stade de France", "France", Date(27, 9, 2024));
+
+    return 0;
+}
+*/
+
+int main() {
+    // Create a Calendar object
+    Calendar cal;
+
+    // Test Case 1: Add Congregations
+    cout << "Adding Congregations:" << endl;
+    cout << "MadMax Tour India 2024: " << cal.addCongregation("MadMax Tour India 2024", "Concert", Date(26, 7, 2024), Date(29, 7, 2024)) << endl;
+    cout << "Paris Olympics 2024: " << cal.addCongregation("Paris Olympics 2024", "Games", Date(26, 9, 2024), Date(5, 10, 2024)) << endl;
+    cout << "Justin Bieber Tour: " << cal.addCongregation("Justin Bieber Tour", "Concert", Date(10, 10, 2024), Date(12, 10, 2024)) << endl;  // Adjusted to a valid date range
+    cout << "Summer Fest 2025: " << cal.addCongregation("Summer Fest 2025", "Concert", Date(1, 6, 2025), Date(15, 6, 2025)) << endl;
+    cout << "G20 US 2026: " << cal.addCongregation("G20 US 2026", "Convention", Date(28, 2, 2026), Date(29, 2, 2026)) << endl;  // Adjusted to a valid leap year date
+    cout << endl;
+
+    // Test Case 2: Show Congregations
+    cout << "Showing Congregations:" << endl;
+    cal.showCongregations();
+    cout << endl;
+
+    // Test Case 3: Add Venues
+    cout << "Adding Venues:" << endl;
+    cout << "Stade de France: " << cal.addVenue("Stade de France", "Bandra-East", "Saint-Denis", "Ile-de-France", "932100", "France", 80000) << endl;
+    cout << "Wembley Stadium: " << cal.addVenue("Wembley Stadium", "Kormangala", "London", "England", "HA9000", "UK", 90000) << endl;
+    cout << "Olympic Stadium: " << cal.addVenue("Olympic Stadium", "JPNagar", "Montreal", "Quebec", "H1V3N7", "Canada", 60000) << endl;
+    cout << endl;
+
+    // Test Case 4: Show Venues based on Location
+    cout << "Showing Venues in London, England, UK:" << endl;
+    cal.showVenues("London", "England", "", "UK");
+    cout << endl;
+
+    // Test Case 5: Reserve Venue
+    cout << "Reserving Venues for Paris Olympics 2024:" << endl;
+    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;
+    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;  // Expecting failure due to duplicate reservation
+    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "Paris Olympics 2024") << endl;
+    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "MadMax Tour India 2024") << endl;
+    cout << endl;
+
+    // Test Case 6: Show Reservations for a Non-Existent Congregation
+    cout << "Showing Reservations for Mars Olympics 1985:" << endl;
+    cal.showReserved("Mars Olympics 1985");
+    cout << endl;
+
+    // Test Case 7: Show Reservations for an Existing Congregation
+    cout << "Showing Reservations for Paris Olympics 2024:" << endl;
+    cal.showReserved("Paris Olympics 2024");
+    cout << endl;
+
+    // Test Case 8: Add Events
+    cout << "Adding Events for Paris Olympics 2024 at Stade de France:" << endl;
+    cout << "Event 1: " << cal.addEvent("Opening Ceremony", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(9, 0), Time(11, 0)) << endl;
+    cout << "Event 2: " << cal.addEvent("Athletics - Morning Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(11, 15), Time(13, 30)) << endl;
+    cout << "Event 3: " << cal.addEvent("Athletics - Night Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(20, 30), Time(23, 45)) << endl;
+    cout << "Event 4: " << cal.addEvent("Football - Quarter Final", "Paris Olympics 2024", "Stade de France", "France", Date(28, 9, 2024), Time(0, 0), Time(2, 0)) << endl;
+    cout << endl;
+
+    // Test Case 9: Show Events for a Specific Date
+    cout << "Showing Events for Stade de France, France on 2024-09-27:" << endl;
+    cal.showEvents("Stade de France", "France", Date(27, 9, 2024));
+    cout << endl;
+
+    return 0;
+}
+

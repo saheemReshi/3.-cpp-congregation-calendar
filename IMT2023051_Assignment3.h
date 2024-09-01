@@ -222,6 +222,7 @@ public:
     bool checkReservation(string congName, Date d, Time from, Time to) const;//helper method to check if a reservation for a cong exists for this venue
     //methods for dealing with events
     status addEvent(string eName,string congName, Date d, Time from, Time to);
+    status showEvents(Date d) const;
     
 };
 
@@ -238,6 +239,7 @@ public:
     status freeVenue(string vName, string countryName, string congName);
 
     status addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to);
+    status showEvents(string venueName, string countryName, Date d) const;
 
     CongVenueResData getDetailsOfVenue(string vName, string countryName) const;
 };
@@ -262,5 +264,6 @@ public:
     status freeVenue(string vName, string countryName, string congName);
     
     status addEvent(string eName,string congName, string vName, string countryName, Date d, Time from, Time t);
+    status showEvents(string venueName, string venueCountry, Date d) const;
 
 };
