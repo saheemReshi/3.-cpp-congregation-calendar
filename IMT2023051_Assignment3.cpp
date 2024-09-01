@@ -28,7 +28,7 @@ bool Time::isValid() const {
 int Time::differenceInMinutes(const Time& other) const {//will only be be useful when both events are in same date
     int thisTotalMinutes = hour * 60 + min;
     int otherTotalMinutes = other.hour * 60 + other.min;
-    return thisTotalMinutes - otherTotalMinutes;
+    return abs(thisTotalMinutes - otherTotalMinutes);
 }
 
 // Overloaded comparison operators
@@ -151,6 +151,32 @@ ostream& operator<<(ostream& os, const Date& date) {
     return os;
 }
 
+//for checking if dates are adjacent
+bool Date::isAdjacent(const Date& other) const {
+    // If the dates are in the same year and month
+    if (year == other.year && month == other.month) {
+        return (day == other.day + 1) || (day + 1 == other.day);
+    }
+    // If the dates are in the same year but different months
+    else if (year == other.year) {
+        if ((month == other.month + 1) && (day == 1)) {
+            return other.day == (isValidDay(31, other.month, year) ? 31 : 30);
+        } else if ((month + 1 == other.month) && (other.day == 1)) {
+            return day == (isValidDay(31, month, year) ? 31 : 30);
+        }
+    }
+    // If the dates are in different years
+    else if (year + 1 == other.year && month == 12 && other.month == 1) {
+        return day == 31 && other.day == 1;
+    } else if (year == other.year + 1 && month == 1 && other.month == 12) {
+        return day == 1 && other.day == 31;
+    }
+    return false;
+}
+
+
+
+
 //Reservation methods
 
 Reservation::Reservation(string name, Date s, Date e) 
@@ -163,7 +189,38 @@ Reservation::Reservation(string name, Date s, Date e)
 Event::Event(string eName,string cName,Time s, Time e, Date d)
     :eName(eName),cName(cName),s(s),e(e),d(d) {}
 
-
+bool Event::timeGap_30(const Event& other) const{
+    //here I know that the two events don't overlap.I just need to find the time difference bw
+    if(d==other.d){
+        //both are on same day
+        int diff=0;
+        if(e<other.s){
+            diff=e.differenceInMinutes(other.s);
+        }
+        else{
+            diff=s.differenceInMinutes(other.e);
+        }
+        if(diff<30) return false;
+    }    
+    else if(d.isAdjacent(other.d)){
+        //only need to check this case for this calendar
+        Time e1(0,0),s2(0,0);//end time of first evnet and start time of next day event 
+        if(d<other.d){
+            e1=e;
+            s2=other.s;
+        }
+        else{
+            e1=other.e;
+            s2=s;
+        }
+        //only one case of conflict bw two events on adjacent days- when one ends on 23:45 and other one starts on 00:00
+        //this is because any event must end on 23:45 max bcz 23:59 is max time for a day, and start and end time must align in 15-min interval
+        if(e1==Time(23,45) && s2==Time(00,00)){
+            return false;
+        }        
+    }
+    return true;
+}
 
 
 
@@ -330,6 +387,12 @@ int Venue::getCapacity() const {
     return capacity;
 }
 
+
+// bool Venue::timegap_30(Date d1, Date d2, Time t1, Time t2){
+//     //helper function to check if the two events 
+// }
+
+
 status Venue::addReservation(string congName,Date start, Date end){
     //here i'll try to add this cong Name in the resList
     // Check for conflicting or duplicate reservations
@@ -371,6 +434,34 @@ status Venue::addReservation(string congName,Date start, Date end){
     }
 
     return OK;
+}
+
+bool Venue::checkReservation(string congName, Date d, Time from, Time to) const {
+    // Traverse the reservation list to check if a reservation exists for this congregation on the given date and time range
+    Reservation* current = resList;
+    while (current != nullptr) {
+        if (current->congName == congName && d >= current->s && d <= current->e) {
+            // Found a reservation for the congregation on the given date
+            return true;
+        }
+        current = current->next;
+    }
+    return false; // No reservation found
+}
+
+status Venue::addEvent(string congName, Date d, Time from, Time to){
+    // i'll ensure that no two events are scheduled with time difference less that 30 min
+    int diff=from.differenceInMinutes(to);
+    if(diff<30) return INVALID_TIME_LENGTH;
+    
+    //first I've to check if such a reservation exists for this cong at date d
+    if(checkReservation(congName,d,from,to)==false){
+        return NO_RESERVATION_OR_CONG;
+    }
+
+    //now I know that such a reservation exits for this congName, now i'll insert in the eventList,ensuring chronological order of date and time
+    Event *prev=nullptr,*current=eList;
+
 }
 
 
@@ -445,6 +536,18 @@ CongVenueResData VenueManager::getDetailsOfVenue(string vName, string countryNam
 }
 
 
+status VenueManager::addEvent(string congName, string vName, string countryName, Date d, Time from, Time to){
+    //here I'll search for the venue
+    for(auto &v:venues){
+        if(v.getName()==vName && v.getCountry()==countryName){
+            //now pass this to the Venue class
+            return v.addEvent(congName,d,from,to);
+        }
+    }
+    return NO_VENUE;//when no such venue exists
+}
+
+
 // ** Calendar class methods
 
 status Calendar::addCongregation(string name, string type, Date startDate, Date endDate) {
@@ -505,7 +608,13 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
 
 
 
+status Calendar::addEvent(string congName, string vName, string countryName, Date d, Time from, Time to){
+    /*addEvent <congregation-name-string> <venueName-string> <venueCountry-string> <date-string> 
+    <fromTime-string> <toTime-string> <eventName-string>*/
 
+    //here first I've to search for the venue so I'll pass this to the venueManager
+
+}
 
 
 
