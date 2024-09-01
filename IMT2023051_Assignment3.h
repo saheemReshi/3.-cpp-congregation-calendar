@@ -35,6 +35,8 @@ struct Reservation;
 struct CongVenueResData;
 
 struct CongVenueResData{
+    //this is just a simple struct which stores the data members of a venue
+    //it will be used in storing the details of all the venues that a congregation has reserved-(inside the congregation class)
     string name;
     string city;
     string addr;
@@ -123,19 +125,18 @@ public:
 
 struct Event{
     Date d;
-    string name;
+    string eName;
+    string cName;//cong to which the event belongs to
     Time s,e;//start and end time
     Event *next=nullptr;//initialized to null by default
 
-    Event(string name,Time s,Time e, Date d);
+    Event(string eName,string cName,Time s,Time e, Date d);
 };
 
 struct Reservation{
     //this will have the start and end date and the name of the congregation, which has reserved the venue
-    //this will also store the linked list of events
     Date s,e;
     string congName;
-    Event * eList=nullptr;
     Reservation * next=nullptr;//to make it a linked list of reservations
     //constructor
     Reservation(string name,Date s,Date e);
@@ -162,7 +163,8 @@ public:
     string getType() const;
     Date getStartDate() const;
     Date getEndDate() const;
-    void addReservation(CongVenueResData data);
+    void addReservation(const CongVenueResData& data);
+    void showReserved() const;
 };
 
 // CongregationManager class 
@@ -174,9 +176,10 @@ public:
     status addCongregation(string name, string type, Date startDate, Date endDate);
     status showCongregations() const;
     status delCongregation(string name);
+    status showReserved(string congName) const;
     bool congExists(string name) const;
     void getDatesForCong(string congName, Date &start, Date &end) const;//here I'm using references for getting the start and end date of a particular congregaion.
-    void addReservationToCong(string congName, CongVenueResData data);
+    void addReservationToCong(string congName, const CongVenueResData& data);
 };
 
 
@@ -192,6 +195,7 @@ private:
     string postalCode;
     string country;
     int capacity;
+    Event * eList=nullptr;//this linked list will store all the events in chronological order of date and time
     Reservation * resList=nullptr;// this is to sort the reservation linked list in chronological order of dates
 public:
     // Constructor
@@ -231,6 +235,14 @@ private:
     VenueManager vm;
     CongregationManager cm;
 public:
+    status addCongregation(string name, string type, Date startDate, Date endDate);
+    status showCongregations() const;
+    status delCongregation(string name);
+    
+    status addVenue(string name, string addr, string city,  string state, string postalCode, string country, int capacity);
+    status showVenues(string city, string state, string postalCode, string country) const;
+
+    status showReserved(string congName) const;
     status reserveVenue(string vName, string countryName, string congName);
     status freeVenue(string vName, string countryName, string congName);
 

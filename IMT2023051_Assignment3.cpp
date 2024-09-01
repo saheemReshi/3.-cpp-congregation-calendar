@@ -147,7 +147,7 @@ void Date::printDate() const{
 }
 //for printing date
 ostream& operator<<(ostream& os, const Date& date) {
-    os << date.year<<(date.month<10?"0":"")<<date.month<<(date.day<10?"0":"")<<date.day;
+    os << date.year<<"-"<<(date.month<10?"0":"")<<date.month<<"-"<<(date.day<10?"0":"")<<date.day;
     return os;
 }
 
@@ -160,8 +160,8 @@ Reservation::Reservation(string name, Date s, Date e)
 
 //Event class methods
 
-Event::Event(string name,Time s, Time e, Date d)
-    :name(name),s(s),e(e),d(d) {}
+Event::Event(string eName,string cName,Time s, Time e, Date d)
+    :eName(eName),cName(cName),s(s),e(e),d(d) {}
 
 
 
@@ -195,6 +195,19 @@ Congregation::~Congregation(){
     //*****later! */
 }
 
+void Congregation::addReservation(const CongVenueResData& data ){
+    //just does a simple push_back
+    _reserved.push_back(data);//here I'm not checking if it already exists or not, because duplicate check was already made in addReservation
+}
+
+void Congregation::showReserved() const{
+    // cout<<"hiya"<<endl;
+    cout<<_reserved.size()<<endl;
+    for(auto res:_reserved){
+        cout<<res.name<<" "<<res.addr<<":"<<res.city<<":"<<res.state<<":"<<res.postalCode<<":"<<res.country<<" "<<res.capacity<<endl;
+    }
+}
+
 
 // CongregationManager class methods
 
@@ -211,7 +224,7 @@ status CongregationManager::addCongregation(string name, string type, Date start
 }
 
 status CongregationManager::showCongregations() const{
-    cout<<congs.size();
+    cout<<congs.size()<<endl;
     for(auto cong:congs){
         cout<<cong.getName()<<" "<<cong.getType()<<" "<<cong.getStartDate()<<" "
             <<cong.getEndDate()<<endl;
@@ -252,12 +265,34 @@ bool CongregationManager::congExists(string name) const{
 void CongregationManager::getDatesForCong(string congName, Date &start, Date &end) const{
     //Note: this function always expects the congName to exist in the vector
     for(auto cong:congs){
-        if(cong.getName()==congName)
+        if(cong.getName()==congName){
             start=cong.getStartDate();
             end=cong.getEndDate();
             return;
+        }
     }
 }
+
+void CongregationManager::addReservationToCong(string congName, const CongVenueResData& data){
+    for(auto &cong:congs){
+        if(cong.getName()==congName){
+            cong.addReservation(data);
+            return;
+        }
+    }
+}
+
+status CongregationManager::showReserved(string congName) const{
+    for(auto cong:congs){
+        if(cong.getName()==congName){
+            // cout<<"chicking"<<endl;
+            cong.showReserved();//will print everything here, no need to print anything else
+            return NOPRINT_NEED;
+        }
+    }
+    return CONG_NOT_FOUND;
+}
+
 
 
 //Venue class methods
@@ -300,7 +335,6 @@ status Venue::addReservation(string congName,Date start, Date end){
     // Check for conflicting or duplicate reservations
     Reservation* current = resList;
     Reservation* prev = nullptr;
-
     while (current != nullptr) {
         // Check if the new reservation is exactly the same as an existing one
         if (congName == current->congName && start == current->s && end == current->e) {
@@ -353,9 +387,9 @@ status VenueManager::addVenue(string name, string city, string addr, string stat
     }
     //now I can directly add
     Venue newVenue=Venue(name,city,addr,state,postalCode,country,capacity);
-    auto it=venues.end()--;
-    venues.insert(it,newVenue);
-    // venues.push_back(newVenue);
+    // auto it=venues.end()--;
+    // venues.insert(it,newVenue);
+    venues.push_back(newVenue);
     return OK;
 }
 
@@ -389,7 +423,7 @@ bool VenueManager::VenueExist(string vName, string country) const{
 
 status VenueManager::reserveVenue(string vName, string countryName, string congName, Date start, Date end){
     //here I'll find the venue given in command and then call methods of Venue class to do the rest
-    for(auto v:venues){
+    for(auto &v:venues){
         if(vName==v.getName() && countryName==v.getCountry()){
             return v.addReservation(congName,start,end);
         }
@@ -412,6 +446,32 @@ CongVenueResData VenueManager::getDetailsOfVenue(string vName, string countryNam
 
 
 // ** Calendar class methods
+
+status Calendar::addCongregation(string name, string type, Date startDate, Date endDate) {
+    return cm.addCongregation(name, type, startDate, endDate);
+}
+
+status Calendar::showCongregations() const {
+    return cm.showCongregations();
+}
+
+status Calendar::delCongregation(string name) {
+    return cm.delCongregation(name);
+}
+
+status Calendar::addVenue(string name, string addr,string city,  string state, string postalCode, string country, int capacity) {
+    return vm.addVenue(name, city, addr, state, postalCode, country, capacity);
+}
+
+status Calendar::showVenues(string city, string state, string postalCode, string country) const {
+        return vm.showVenues(city, state, postalCode, country);
+}
+
+status Calendar::showReserved(string congName) const {
+    return cm.showReserved(congName);
+}
+
+
 status Calendar::reserveVenue(string vName, string countryName, string congName){
     //here i'll first check if such a venue and country exist or not
     if(vm.VenueExist(vName,countryName)==false){
@@ -431,11 +491,16 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
 
     Date start,end;
     cm.getDatesForCong(congName,start,end);//using references for returning multiple 
+    // cout<<"hiya"<<endl;
+    // cout<<start<<"  "<<end<<endl;
     status check=vm.reserveVenue(vName,countryName,congName,start,end);
+    // cout<<"hiya--"<<check<<endl;
     if(check==OK){
         //if no error occurs, then I'll also have to add that venue to the  vector<CongVenueResData> _reserved in Congregation class. This vector is useful for showReserved command for congregations
-
+        CongVenueResData temp=vm.getDetailsOfVenue(vName,countryName);
+        cm.addReservationToCong(congName,temp);
     }
+    return check;
 }
 
 
@@ -446,23 +511,54 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
 
 
 
-int main(){//ibrahim said its necessary to make default constructor for VEnues and congr. bcz using a vector --pushback
-    VenueManager a;
-    a.addVenue("j","j","j","j","j","j",89);
-    a.addVenue("a","j","j","j","j","j",89);
-    a.addVenue("f","j","j","j","j","j",89);
-    a.addVenue("s","j","j","j","j","j",89);
-    a.addVenue("dd","j","j","j","j","j",89);
-    a.addVenue("d","j","j","j","j","j",89);
-    a.addVenue("e","j","j","j","j","j",89);
-    a.addVenue("ew","j","j","j","j","j",89);
-    a.addVenue("aa","j","j","j","j","j",89);
-    a.addVenue("ffd","j","j","j","j","j",89);
-    a.addVenue("sde","j","j","j","j","j",89);
-    a.addVenue("ded","j","j","j","j","j",89);
-    a.addVenue("dre","j","j","j","j","j",89);
-    a.addVenue("eret","j","j","j","j","j",89);
-    a.addVenue("ewww","j","j","j","j","j",89);
-    a.showVenues("","","","");
+int main() {
+    // Create a Calendar object
+    Calendar cal;
+
+    // Test Case 1: Add Congregations
+    cout << "Adding Congregations:" << endl;
+    cout << "MadMax Tour India 2024: " << cal.addCongregation("MadMax Tour India 2024", "Concert", Date(26, 7, 2024), Date(29, 7, 2027)) << endl;
+    cout << "Paris Olympics 2024: " << cal.addCongregation("Paris Olympics 2024", "Games", Date(26, 9, 2024), Date(5, 10, 2024)) << endl;
+    cout << "Justin Bieber Tour: " << cal.addCongregation("Justin Bieber Tour", "Concert", Date(10, 10, 2024), Date(12, 10, 2024)) << endl;  // Adjusted to a valid date range
+    cout << "Summer Fest 2025: " << cal.addCongregation("Summer Fest 2025", "Concert", Date(1, 6, 2025), Date(15, 6, 2025)) << endl;
+    cout << "G20 US 2026: " << cal.addCongregation("G20 US 2026", "Convention", Date(28, 2, 2026), Date(29, 2, 2026)) << endl;  // Adjusted to a valid leap year date
+    cout << endl;
+
+    // Test Case 2: Show Congregations
+    cout << "Showing Congregations:" << endl;
+    cal.showCongregations();
+    cout << endl;
+
+    // Test Case 3: Add Venues
+    cout << "Adding Venues:" << endl;
+    cout << "Stade de France: " << cal.addVenue("Stade de France", "Bandra-East", "Saint-Denis", "Ile-de-France", "932100", "France", 80000) << endl;
+    cout << "Wembley Stadium: " << cal.addVenue("Wembley Stadium", "Kormangala", "London", "England", "HA9000", "UK", 90000) << endl;
+    cout << "Olympic Stadium: " << cal.addVenue("Olympic Stadium", "JPNagar", "Montreal", "Quebec", "H1V3N7", "Canada", 60000) << endl;
+    cout << endl;
+
+    // Test Case 4: Show Venues based on Location
+    cout << "Showing Venues in London, England, UK:" << endl;
+    cal.showVenues("London", "", "", "");
+    // cal.showVenues("London", "England", "HA9000", "UK");
+    cout << endl;
+
+    // Test Case 5: Reserve Venue
+    cout << "Reserving Venues for Paris Olympics 2024:" << endl;
+    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;
+    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;
+    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "Paris Olympics 2024") << endl;
+    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "MadMax Tour India 2024") << endl;
+    cout << endl;
+
+    // Test Case 6: Show Reservations for a Non-Existent Congregation
+    cout << "Showing Reservations for Mars Olympics 1985:" << endl;
+    cal.showReserved("Mars Olympics 1985");
+    cout << endl;
+
+    // Test Case 7: Show Reservations for an Existing Congregation
+    cout << "Showing Reservations for Paris Olympics 2024:" << endl;
+    cal.showReserved("Paris Olympics 2024");
+    cout << endl;
+
     return 0;
 }
