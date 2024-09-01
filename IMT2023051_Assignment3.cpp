@@ -388,9 +388,7 @@ int Venue::getCapacity() const {
 }
 
 
-// bool Venue::timegap_30(Date d1, Date d2, Time t1, Time t2){
-//     //helper function to check if the two events 
-// }
+
 
 
 status Venue::addReservation(string congName,Date start, Date end){
@@ -449,7 +447,7 @@ bool Venue::checkReservation(string congName, Date d, Time from, Time to) const 
     return false; // No reservation found
 }
 
-status Venue::addEvent(string congName, Date d, Time from, Time to){
+status Venue::addEvent(string eName,string congName, Date d, Time from, Time to){
     // i'll ensure that no two events are scheduled with time difference less that 30 min
     int diff=from.differenceInMinutes(to);
     if(diff<30) return INVALID_TIME_LENGTH;
@@ -458,10 +456,40 @@ status Venue::addEvent(string congName, Date d, Time from, Time to){
     if(checkReservation(congName,d,from,to)==false){
         return NO_RESERVATION_OR_CONG;
     }
+    
+    // Create the new event
+    Event* newEvent = new Event("Event Name", congName, from, to, d); // Placeholder event name, should be passed as a parameter
 
+    Time s=from,e=to;
     //now I know that such a reservation exits for this congName, now i'll insert in the eventList,ensuring chronological order of date and time
     Event *prev=nullptr,*current=eList;
-
+    while(current!=nullptr && ((current->d)<d)){
+        prev=current;
+        current=current->next;
+    }
+    while(current!=nullptr){//here I dont need to break out if date >d bcz till then if event isn't inserted, TIME_CONFLICT will be retruned
+        if(current->e<s){
+            //move on condn
+            prev=current;
+            current=current->next; 
+        }
+        else if(e>=current->s && current->e>=s){
+            delete newEvent;
+            return TIME_CONFLICT_EVENT;
+        }
+        else{
+            //here I'll insert after checking if 30 min time diff bw prev and current events
+            if(prev->timeGap_30(*newEvent)==false || current->timeGap_30(*newEvent)==false){
+                delete newEvent;
+                return TIME_CONFLICT_EVENT_30MIN;
+            }
+            //now insert here after breaking
+            break;
+        }
+    }
+    newEvent->next=current;
+    prev->next=newEvent;
+    return OK;
 }
 
 
@@ -536,12 +564,12 @@ CongVenueResData VenueManager::getDetailsOfVenue(string vName, string countryNam
 }
 
 
-status VenueManager::addEvent(string congName, string vName, string countryName, Date d, Time from, Time to){
+status VenueManager::addEvent(string eName,string congName, string vName, string countryName, Date d, Time from, Time to){
     //here I'll search for the venue
     for(auto &v:venues){
         if(v.getName()==vName && v.getCountry()==countryName){
             //now pass this to the Venue class
-            return v.addEvent(congName,d,from,to);
+            return v.addEvent(eName,congName,d,from,to);
         }
     }
     return NO_VENUE;//when no such venue exists
@@ -608,12 +636,12 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
 
 
 
-status Calendar::addEvent(string congName, string vName, string countryName, Date d, Time from, Time to){
+status Calendar::addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to){
     /*addEvent <congregation-name-string> <venueName-string> <venueCountry-string> <date-string> 
     <fromTime-string> <toTime-string> <eventName-string>*/
 
     //here first I've to search for the venue so I'll pass this to the venueManager
-
+    vm.addEvent(eName,congName,vName,countryName,d,from,to);
 }
 
 

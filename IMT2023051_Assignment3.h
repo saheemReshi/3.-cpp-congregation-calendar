@@ -13,6 +13,8 @@ enum status {
     INVALID_DATE_TIME,
     NO_EVENT,
     TIME_CONFLICT,
+    TIME_CONFLICT_EVENT,//specially for events
+    TIME_CONFLICT_EVENT_30MIN,
     MEMORY_ERROR,
     FORMAT_ERROR,
     NOPRINT_NEED,
@@ -219,7 +221,7 @@ public:
     status addReservation(string congName,Date start, Date end);
     bool checkReservation(string congName, Date d, Time from, Time to) const;//helper method to check if a reservation for a cong exists for this venue
     //methods for dealing with events
-    status addEvent(string congName, Date d, Time from, Time to);
+    status addEvent(string eName,string congName, Date d, Time from, Time to);
     
 };
 
@@ -235,7 +237,7 @@ public:
     status reserveVenue(string vName, string countryName, string congName,Date start,Date end);
     status freeVenue(string vName, string countryName, string congName);
 
-    status addEvent(string congName, string vName, string countryName, Date d, Time from, Time to);
+    status addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to);
 
     CongVenueResData getDetailsOfVenue(string vName, string countryName) const;
 };
@@ -259,6 +261,6 @@ public:
     status reserveVenue(string vName, string countryName, string congName);
     status freeVenue(string vName, string countryName, string congName);
     
-    status addEvent(string congName, string vName, string countryName, Date d, Time from, Time t);
+    status addEvent(string eName,string congName, string vName, string countryName, Date d, Time from, Time t);
 
 };
