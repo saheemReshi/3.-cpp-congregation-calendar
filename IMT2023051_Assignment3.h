@@ -115,7 +115,7 @@ public:
     // Method to validate the date
     bool isValid() const;
     bool isAdjacent(const Date& other) const;
-
+    Date nextDay() const;//this method will give me the next date,uses chrono inside
     //Method to print date
     void printDate() const;
     friend ostream& operator<<(ostream& os, const Date& date);
@@ -236,6 +236,8 @@ public:
     status showEvents(Date d) const;
     status deleteEvent(string congName, Date d, Time from, string eName);
     status freeReservation(string congName);
+    status showCalendar(const string& congName, const Date& startDate, const Date& endDate) const;
+
     
 };
 
@@ -254,6 +256,7 @@ public:
     status addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to);
     status showEvents(string venueName, string countryName, Date d) const;
     status deleteEvent(string congName, string vName, string countryName, Date d, Time from, string eName);
+    status showCalendar(const string& congName, const string& venueName, const string& venueCountry,Date startDate, Date endDate) const;
 
     CongVenueResData getDetailsOfVenue(string vName, string countryName) const;
 };
@@ -281,5 +284,6 @@ public:
     status addEvent(string eName,string congName, string vName, string countryName, Date d, Time from, Time t);
     status showEvents(string venueName, string venueCountry, Date d) const;
     status deleteEvent(string congName, string vName, string countryName, Date d, Time from, string eName);
+    status showCalendar(const string& congName, const string& venueName, const string& venueCountry) const;
 
 };

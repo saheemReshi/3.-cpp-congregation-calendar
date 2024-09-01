@@ -174,6 +174,28 @@ bool Date::isAdjacent(const Date& other) const {
     return false;
 }
 
+Date Date::nextDay() const {
+    // Convert the Date object to a time_t
+    std::tm time_in = {};
+    time_in.tm_year = year - 1900; // years since 1900
+    time_in.tm_mon = month - 1;    // months since January
+    time_in.tm_mday = day;         // day of the month
+    time_in.tm_hour = 0;
+    time_in.tm_min = 0;
+    time_in.tm_sec = 0;
+
+    // Convert to time_t (this represents time in seconds since the epoch)
+    std::time_t time_temp = std::mktime(&time_in);
+
+    //  Add one day using chrono
+    time_temp += std::chrono::hours(24).count(); // Add 24 hours
+
+    //  Convert back to std::tm
+    std::tm* time_out = std::localtime(&time_temp);
+
+    //  Return the new Date object
+    return Date(time_out->tm_mday, time_out->tm_mon + 1, time_out->tm_year + 1900);
+}
 
 
 
@@ -658,6 +680,65 @@ bool Venue::hasActiveOrFutureReservations() const {
     return false;
 }
 
+
+status Venue::showCalendar(const string& congName, const Date& startDate, const Date& endDate) const {
+    // Check if the venue has a reservation for this congregation in the given date range
+    Reservation* res = resList;
+    bool reservationExists = false;
+    
+    while (res != nullptr) {
+        if (res->congName == congName && res->s <= endDate && res->e >= startDate) {
+            reservationExists = true;
+            break;
+        }
+        res = res->next;
+    }
+
+    if (!reservationExists) {
+        return NO_RESERVATION_OR_CONG; // No reservation found
+    }
+    //i need to print totalEvents on the first line, so I'll traverse through the eList twice
+    Event* event = eList;
+    int totalEvents = 0;
+    while (event != nullptr) {
+        if (event->cName == congName) {
+            totalEvents++;
+        }
+        event = event->next;
+    }
+    //now i have the total number of events
+    cout<<totalEvents<<endl;
+
+    Date currentDate = startDate;
+    while (currentDate <= endDate) {
+        int eventsOnThisDate = 0;
+        Event* event = eList;
+        // Count events for the current date
+        while (event != nullptr) {
+            if (event->cName == congName && event->d == currentDate) {
+                eventsOnThisDate++;
+            }
+            event = event->next;
+        }
+
+        // Print date and number of events
+        cout << currentDate << " " << eventsOnThisDate << endl;
+
+        // Print event details if any
+        event = eList;
+        while (event != nullptr) {
+            if (event->cName == congName && event->d == currentDate) {
+                cout << event->eName << " " << event->s << " " << event->e << endl;
+            }
+            event = event->next;
+        }
+
+        // Move to the next date
+        currentDate = currentDate.nextDay(); // Assuming you have a method to get the next day
+    }
+    return NOPRINT_NEED;
+}
+
 //VenueManager class methods
 
 status VenueManager::addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity){
@@ -786,6 +867,17 @@ status VenueManager::deleteEvent(string congName, string vName, string countryNa
 }
 
 
+status VenueManager::showCalendar(const string& congName, const string& venueName, const string& venueCountry,Date startDate, Date endDate) const{
+    //here i'll search for this venue 
+    for(auto v:venues){
+        if(v.getName()==venueName && v.getCountry()==venueCountry){
+            return v.showCalendar(congName,startDate,endDate);
+        }
+    }
+    return NO_VENUE;    
+}
+
+
 
 // ** Calendar class methods
 
@@ -893,6 +985,20 @@ status Calendar::deleteEvent(string congName, string vName, string countryName, 
     return vm.deleteEvent(congName, vName, countryName, d, from, eName);
 }
 
+status Calendar::showCalendar(const string& congName, const string& venueName, const string& venueCountry) const {
+    //first I'll check if the congr exists or not
+    if(cm.congExists(congName)==false){
+        return CONG_NOT_FOUND;
+    }
+    
+    // Get the start and end dates for the congregation
+    Date startDate, endDate;
+    cm.getDatesForCong(congName, startDate, endDate);
+
+    //now I'll search for the venue in the venueManager class
+    return vm.showCalendar(congName,venueName,venueCountry,startDate,endDate);
+
+}
 
 
 /*
