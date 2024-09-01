@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <chrono>
+#include <ctime>
 using namespace std; 
 
 // Enum for status codes
@@ -11,7 +13,7 @@ enum status {
     DUPLICATE_VENUE,//used when venue names are same within a country
     NO_VENUE,
     INVALID_DATE_TIME,
-    NO_EVENT,
+    NO_EVENT,//to delete
     TIME_CONFLICT,
     TIME_CONFLICT_EVENT,//specially for events
     TIME_CONFLICT_EVENT_30MIN,
@@ -23,7 +25,8 @@ enum status {
     VENUE_MANAGER_RESERVE_VENUE_EXCEPTION,
     DUPLICATE_RESERVATION,
     NO_RESERVATION_OR_CONG,
-    INVALID_TIME_LENGTH//FOR addEvent min duration is 30min
+    INVALID_TIME_LENGTH,//FOR addEvent min duration is 30min
+    VENUE_HAS_RESERVATIONS,// venue has active or future reservations
 };
 
 class Time;
@@ -146,7 +149,7 @@ struct Reservation{
     Reservation * next=nullptr;//to make it a linked list of reservations
     //constructor
     Reservation(string name,Date s,Date e);
-
+    bool isActiveOrFuture() const;
 };
 
 
@@ -172,6 +175,7 @@ public:
     void addReservation(const CongVenueResData& data);
     void showReserved() const;
     status removeReservation(const string& vName, const string& countryName);
+    vector<CongVenueResData> getReservedList() const;
 
 };
 
@@ -188,7 +192,8 @@ public:
     bool congExists(string name) const;
     void getDatesForCong(string congName, Date &start, Date &end) const;//here I'm using references for getting the start and end date of a particular congregaion.
     void addReservationToCong(string congName, const CongVenueResData& data);
-
+    //method to extract the list of reserved venues stored in a congregation. Useful for delCongr
+    vector<CongVenueResData> getReservedList(string congName) const;
     // Method to remove a reservation from the `_reserved` vector of a congregation// this will be called when freeVenue will be called
     status removeReservationFromCongregation(string congName, string vName, string countryName);
        
@@ -222,13 +227,14 @@ public:
     string getCountry() const;
     int getCapacity() const;
 
-    // bool timegap_30(Date d1,Date d2, Time t1, Time t2) const;
+    bool hasActiveOrFutureReservations() const;
     //methods for dealing with reservations
     status addReservation(string congName,Date start, Date end);
     bool checkReservation(string congName, Date d, Time from, Time to) const;//helper method to check if a reservation for a cong exists for this venue
     //methods for dealing with events
     status addEvent(string eName,string congName, Date d, Time from, Time to);
     status showEvents(Date d) const;
+    status deleteEvent(string congName, Date d, Time from, string eName);
     status freeReservation(string congName);
     
 };
@@ -239,7 +245,7 @@ private:
 
 public:
     status addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity);
-    status delVenue(string vName, string countryName);//a venue cant be deleted if it has any active or future reservations
+    status deleteVenue(string name, string country);
     status showVenues(string city, string state, string postalCode, string country) const;
     bool VenueExist(string vName,string country) const;
     status reserveVenue(string vName, string countryName, string congName,Date start,Date end);
@@ -247,6 +253,7 @@ public:
 
     status addEvent(string eName, string congName, string vName, string countryName, Date d, Time from, Time to);
     status showEvents(string venueName, string countryName, Date d) const;
+    status deleteEvent(string congName, string vName, string countryName, Date d, Time from, string eName);
 
     CongVenueResData getDetailsOfVenue(string vName, string countryName) const;
 };
@@ -265,6 +272,7 @@ public:
     
     status addVenue(string name, string addr, string city,  string state, string postalCode, string country, int capacity);
     status showVenues(string city, string state, string postalCode, string country) const;
+    status delVenue(string name, string country);
 
     status showReserved(string congName) const;
     status reserveVenue(string vName, string countryName, string congName);
@@ -272,5 +280,6 @@ public:
     
     status addEvent(string eName,string congName, string vName, string countryName, Date d, Time from, Time t);
     status showEvents(string venueName, string venueCountry, Date d) const;
+    status deleteEvent(string congName, string vName, string countryName, Date d, Time from, string eName);
 
 };
