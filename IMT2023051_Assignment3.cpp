@@ -285,6 +285,10 @@ int Venue::getCapacity() const {
     return capacity;
 }
 
+status Venue::addReservation(string congName){
+
+}
+
 
 
 //VenueManager class methods
@@ -322,26 +326,51 @@ status VenueManager::showVenues(string city, string state, string postalCode, st
 }
 
 
-status VenueManager::reserveVenue(string vName, string countryName, string congName){
-    /*Note that a venue can be associated with no more than one congregation on a particular date.
-    The congregation and the venue to be reserved must already exist in the system before such 
-    a reservation is allowed.*/
-    
-    //i must check if such a venue and congregation already exist or not. 
-    //if both exist, then i'll complete the task with methods of Venue and CongregationManager classes
-
-    //first checking for the venue and getting its index in the vector of venues
-    bool venueExists=false;
-    for(int i=0; i<venues.size(); i++){
-        if(venues[i].getName()==vName && venues[i].getCountry()==countryName){
-            venueExists=true;
-            break;
+bool VenueManager::VenueExist(string vName, string country) const{
+    //this is a helper fuction which will tell me if such a venue exists or not
+    for(auto v:venues){
+        if(vName==v.getName() && country==v.getCountry()){
+            return true;
         }
     }
-    bool congExists=false;
+    return false;
+}
 
+
+status VenueManager::reserveVenue(string vName, string countryName, string congName){
+    //here I'll find the venue given in command and then call methods of Venue class to do the rest
+    for(auto v:venues){
+        if(vName==v.getName() && countryName==v.getCountry()){
+            return v.addReservation(congName);
+        }
+    }
+    return VENUE_MANAGER_RESERVE_VENUE_EXCEPTION;
+}
+
+
+
+// ** Calendar class methods
+status Calendar::reserveVenue(string vName, string countryName, string congName){
+    //here i'll first check if such a venue and country exist or not
+    if(vm.VenueExist(vName,countryName)==false){
+        //such a venue doesn't exist
+        return NO_VENUE;
+    }
+    if(cm.congExists(congName)==false){
+        //such a congregation doesn't exist
+        return CONG_NOT_FOUND;
+    }
+    //now we know that both venue and congregation exist
+    //now I'll call methods of CongregationManager and VenueManager that will try to reserse the venue
+    
+    //only two errors left to deal with
+    //first error-this reservation has already happened for this congregation or this date slot is occupied by some other congregation
+    //I'll deal with both of these errors in VenueManager::reserveVenue method
+    //if no error occurs, then I'll also have to add that venue to the  vector<Venue *> _reserved in Congregation class. This vector is useful for showReserved command for congregations
 
 }
+
+
 
 
 

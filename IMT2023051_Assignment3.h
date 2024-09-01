@@ -17,7 +17,8 @@ enum status {
     FORMAT_ERROR,
     NOPRINT_NEED,
     DUPLICATE_CONG_NAME,
-    CONG_NOT_FOUND
+    CONG_NOT_FOUND,
+    VENUE_MANAGER_RESERVE_VENUE_EXCEPTION
 };
 
 class Time;
@@ -159,6 +160,7 @@ public:
     status showCongregations() const;
     status delCongregation(string name);
     bool congExists(string name) const;
+    // bool reservationExists(string )
 };
 
 
@@ -187,6 +189,9 @@ public:
     string getPostalCode() const;
     string getCountry() const;
     int getCapacity() const;
+
+    //methods for dealing with reservations
+    status addReservation(string congName);
 };
 
 class VenueManager{
@@ -197,7 +202,19 @@ public:
     status addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity);
     status delVenue(string vName, string countryName);//a venue cant be deleted if it has any active or future reservations
     status showVenues(string city, string state, string postalCode, string country) const;
+    bool VenueExist(string vName,string country) const;
     status reserveVenue(string vName, string countryName, string congName);
     status freeVenue(string vName, string countryName, string congName);
 };
 
+//Calendar class
+
+class Calendar{
+private:
+    VenueManager vm;
+    CongregationManager cm;
+public:
+    status reserveVenue(string vName, string countryName, string congName);
+    status freeVenue(string vName, string countryName, string congName);
+
+};
