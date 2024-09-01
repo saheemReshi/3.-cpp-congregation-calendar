@@ -18,7 +18,8 @@ enum status {
     NOPRINT_NEED,
     DUPLICATE_CONG_NAME,
     CONG_NOT_FOUND,
-    VENUE_MANAGER_RESERVE_VENUE_EXCEPTION
+    VENUE_MANAGER_RESERVE_VENUE_EXCEPTION,
+    DUPLICATE_RESERVATION
 };
 
 class Time;
@@ -31,6 +32,18 @@ class Decoder;//this will be used to parse the userInput string and see if date,
 class Calendar;
 struct Event;
 struct Reservation;
+struct CongVenueResData;
+
+struct CongVenueResData{
+    string name;
+    string city;
+    string addr;
+    string state;
+    string postalCode;
+    string country;
+    int capacity;
+};
+
 
 class Time {
 private:
@@ -83,6 +96,7 @@ private:
 public:
     // Constructor
     Date(int day, int month, int year);
+    Date()=default;
 
     // Getter methods
     int getDay() const;
@@ -136,7 +150,7 @@ private:
     string _type;
     Date _startDate;
     Date _endDate;
-    vector<Venue *> _reserved;
+    vector<CongVenueResData > _reserved;//this will store the info of all the venues that this congr. has reserved//this will be sorted in chronological order of dates
 
 public:
     // Constructor
@@ -148,6 +162,7 @@ public:
     string getType() const;
     Date getStartDate() const;
     Date getEndDate() const;
+    void addReservation(CongVenueResData data);
 };
 
 // CongregationManager class 
@@ -160,7 +175,8 @@ public:
     status showCongregations() const;
     status delCongregation(string name);
     bool congExists(string name) const;
-    // bool reservationExists(string )
+    void getDatesForCong(string congName, Date &start, Date &end) const;//here I'm using references for getting the start and end date of a particular congregaion.
+    void addReservationToCong(string congName, CongVenueResData data);
 };
 
 
@@ -191,7 +207,7 @@ public:
     int getCapacity() const;
 
     //methods for dealing with reservations
-    status addReservation(string congName);
+    status addReservation(string congName,Date start, Date end);
 };
 
 class VenueManager{
@@ -203,8 +219,9 @@ public:
     status delVenue(string vName, string countryName);//a venue cant be deleted if it has any active or future reservations
     status showVenues(string city, string state, string postalCode, string country) const;
     bool VenueExist(string vName,string country) const;
-    status reserveVenue(string vName, string countryName, string congName);
+    status reserveVenue(string vName, string countryName, string congName,Date start,Date end);
     status freeVenue(string vName, string countryName, string congName);
+    CongVenueResData getDetailsOfVenue(string vName, string countryName) const;
 };
 
 //Calendar class

@@ -249,6 +249,16 @@ bool CongregationManager::congExists(string name) const{
     return false;
 }
 
+void CongregationManager::getDatesForCong(string congName, Date &start, Date &end) const{
+    //Note: this function always expects the congName to exist in the vector
+    for(auto cong:congs){
+        if(cong.getName()==congName)
+            start=cong.getStartDate();
+            end=cong.getEndDate();
+            return;
+    }
+}
+
 
 //Venue class methods
 
@@ -285,8 +295,48 @@ int Venue::getCapacity() const {
     return capacity;
 }
 
-status Venue::addReservation(string congName){
+status Venue::addReservation(string congName,Date start, Date end){
+    //here i'll try to add this cong Name in the resList
+    // Check for conflicting or duplicate reservations
+    Reservation* current = resList;
+    Reservation* prev = nullptr;
 
+    while (current != nullptr) {
+        // Check if the new reservation is exactly the same as an existing one
+        if (congName == current->congName && start == current->s && end == current->e) {
+            return DUPLICATE_RESERVATION;
+        }
+
+        // Check if the new reservation conflicts with any existing ones
+        if (start <= current->e && end >= current->s) {
+            return TIME_CONFLICT;
+        }
+
+        // Find the correct position to insert the new reservation
+        if (end < current->s) {
+            break;
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    // Create the new reservation
+    Reservation* newRes = new Reservation(congName, start, end);
+
+    if (newRes == nullptr) {
+        return MEMORY_ERROR;
+    }
+
+    // Insert the new reservation in the linked list
+    if (prev == nullptr) { // Insert at the beginning
+        newRes->next = resList;
+        resList = newRes;
+    } else { // Insert in the middle or at the end
+        newRes->next = prev->next;
+        prev->next = newRes;
+    }
+
+    return OK;
 }
 
 
@@ -337,16 +387,28 @@ bool VenueManager::VenueExist(string vName, string country) const{
 }
 
 
-status VenueManager::reserveVenue(string vName, string countryName, string congName){
+status VenueManager::reserveVenue(string vName, string countryName, string congName, Date start, Date end){
     //here I'll find the venue given in command and then call methods of Venue class to do the rest
     for(auto v:venues){
         if(vName==v.getName() && countryName==v.getCountry()){
-            return v.addReservation(congName);
+            return v.addReservation(congName,start,end);
         }
     }
     return VENUE_MANAGER_RESERVE_VENUE_EXCEPTION;
 }
 
+
+CongVenueResData VenueManager::getDetailsOfVenue(string vName, string countryName) const{
+    for(auto v:venues){
+        if(v.getName()==vName && v.getCountry()==countryName){
+            //this should always get executed as I had checked earlier that such a venue exists            
+            return {v.getName(),v.getCity(),v.getAddr(),v.getState(),v.getPostalCode(),v.getCountry(),v.getCapacity()};
+        }
+    }
+    //just for error checking
+    string a="ErrorInVM::getDetailsOfVenue";
+    return {a,a,a,a,a,a,0};
+}
 
 
 // ** Calendar class methods
@@ -366,8 +428,14 @@ status Calendar::reserveVenue(string vName, string countryName, string congName)
     //only two errors left to deal with
     //first error-this reservation has already happened for this congregation or this date slot is occupied by some other congregation
     //I'll deal with both of these errors in VenueManager::reserveVenue method
-    //if no error occurs, then I'll also have to add that venue to the  vector<Venue *> _reserved in Congregation class. This vector is useful for showReserved command for congregations
 
+    Date start,end;
+    cm.getDatesForCong(congName,start,end);//using references for returning multiple 
+    status check=vm.reserveVenue(vName,countryName,congName,start,end);
+    if(check==OK){
+        //if no error occurs, then I'll also have to add that venue to the  vector<CongVenueResData> _reserved in Congregation class. This vector is useful for showReserved command for congregations
+
+    }
 }
 
 
