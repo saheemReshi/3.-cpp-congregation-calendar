@@ -35,8 +35,8 @@ class Venue;
 class VenueManager;
 class CongregationManager;
 class Congregation;
-class Decoder;//this will be used to parse the userInput string and see if date, time etc. are valid or not
 class Calendar;
+struct Decoder;//this will be used to parse the userInput string and see if date, time etc. are valid or not
 struct Event;
 struct Reservation;
 struct CongVenueResData;
@@ -286,4 +286,27 @@ public:
     status deleteEvent(string congName, string vName, string countryName, Date d, Time from, string eName);
     status showCalendar(const string& congName, const string& venueName, const string& venueCountry) const;
 
+};
+
+
+//Decoder struct
+
+struct Decoder {
+    Calendar manager;
+
+    void printCode(status code);
+
+    void addCongregation(istringstream &iss);
+    void showCongregations();
+    void addVenue(istringstream &iss);
+    void showVenues(istringstream &iss);
+    void delVenue(istringstream &iss);
+    void reserveVenue(istringstream &iss);
+    void showReserved(istringstream &iss);
+    void freeVenue(istringstream &iss);
+    void addEvent(istringstream &iss);
+    void delEvent(istringstream &iss);
+    void showEvents(istringstream &iss);
+    void showCalendar(istringstream &iss);
+    void deleteCongregation(istringstream &iss);
 };

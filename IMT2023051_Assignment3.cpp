@@ -1001,6 +1001,212 @@ status Calendar::showCalendar(const string& congName, const string& venueName, c
 }
 
 
+//struct Decoder methods
+
+void Decoder::printCode(status code) {
+    if (code == OK) cout << 0 << endl;
+    else if (code == DUPLICATE_CONG_NAME) cout << "-1\nError: This congregation already exists" << endl;
+    else if (code == DUPLICATE_VENUE) cout << "-1\nError: This venue already exists" << endl;
+    else if (code == NO_VENUE) cout << "-1\nError: No such venue" << endl;
+    else if (code == INVALID_DATE_TIME) cout << "-1\nError: Invalid date or time" << endl;
+    else if (code == CONG_NOT_FOUND) cout << "-1\nError: No such congregation" << endl;
+    else if (code == TIME_CONFLICT) cout << "-1\nError: Time slot is occupied" << endl;
+    else if (code == MEMORY_ERROR) cout << "-1\nError: Out of memory" << endl;
+    // Add other error codes as necessary
+}
+
+void Decoder::addCongregation(istringstream &iss) {
+    string name, type, startDate, endDate;
+    iss >> ws;
+    getline(iss, name, '"');
+    getline(iss, name, '"');
+    iss >> ws;
+    getline(iss, type, '"');
+    getline(iss, type, '"');
+    iss >> ws >> startDate >> ws >> endDate;
+
+    // Validate dates
+    // Here you should implement date validation logic
+
+    status code = manager.addCongregation(name, type, startDate, endDate);
+    printCode(code);
+}
+
+void Decoder::showCongregations() {
+    manager.showCongregations();
+}
+
+void Decoder::addVenue(istringstream &iss) {
+    string vName, loc;
+    int cap;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, loc, '"');
+    getline(iss, loc, '"');
+    iss >> ws >> cap;
+
+    status code = manager.addVenue(vName, loc, cap);
+    printCode(code);
+}
+
+void Decoder::showVenues(istringstream &iss) {
+    string location;
+    iss >> ws;
+    getline(iss, location, '"');
+    getline(iss, location, '"');
+
+    manager.showVenues(location);
+}
+
+void Decoder::delVenue(istringstream &iss) {
+    string vName;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+
+    status code = manager.delVenue(vName);
+    printCode(code);
+}
+
+void Decoder::reserveVenue(istringstream &iss) {
+    string vName, country, cName;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, country, '"');
+    getline(iss, country, '"');
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.reserveVenue(vName, country, cName);
+    printCode(code);
+}
+
+void Decoder::showReserved(istringstream &iss) {
+    string cName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.showReserved(cName);
+    printCode(code);
+}
+
+void Decoder::freeVenue(istringstream &iss) {
+    string vName, country, cName;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, country, '"');
+    getline(iss, country, '"');
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.freeVenue(vName, country, cName);
+    printCode(code);
+}
+
+void Decoder::addEvent(istringstream &iss) {
+    string cName, vName, vCountry, date, fromTime, toTime, eName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, vCountry, '"');
+    getline(iss, vCountry, '"');
+    iss >> ws;
+    getline(iss, date, '"');
+    getline(iss, date, '"');
+    iss >> ws >> fromTime >> ws >> toTime;
+    iss >> ws;
+    getline(iss, eName, '"');
+    getline(iss, eName, '"');
+
+    // Validate date and time format
+    // Here you should implement validation logic
+
+    status code = manager.addEvent(cName, vName, vCountry, date, fromTime, toTime, eName);
+    printCode(code);
+}
+
+void Decoder::delEvent(istringstream &iss) {
+    string cName, vName, vCountry, date, fromTime, eName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, vCountry, '"');
+    getline(iss, vCountry, '"');
+    iss >> ws;
+    getline(iss, date, '"');
+    getline(iss, date, '"');
+    iss >> ws >> fromTime;
+    iss >> ws;
+    getline(iss, eName, '"');
+    getline(iss, eName, '"');
+
+    status code = manager.delEvent(cName, vName, vCountry, date, fromTime, eName);
+    printCode(code);
+}
+
+void Decoder::showEvents(istringstream &iss) {
+    string vName, vCountry, date;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, vCountry, '"');
+    getline(iss, vCountry, '"');
+    iss >> ws;
+    getline(iss, date, '"');
+    getline(iss, date, '"');
+
+    status code = manager.showEvents(vName, vCountry, date);
+    printCode(code);
+}
+
+void Decoder::showCalendar(istringstream &iss) {
+    string cName, vName, vCountry;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, vCountry, '"');
+    getline(iss, vCountry, '"');
+
+    status code = manager.showCalendar(cName, vName, vCountry);
+    printCode(code);
+}
+
+void Decoder::deleteCongregation(istringstream &iss) {
+    string cName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.deleteCongregation(cName);
+    printCode(code);
+}
+
+
+
+
+
 /*
 
 
@@ -1069,7 +1275,6 @@ int main() {
 }
 
 
-*/
 
 
 
@@ -1157,6 +1362,7 @@ int main() {
 
     return 0;
 }
+*/
 
 
 
