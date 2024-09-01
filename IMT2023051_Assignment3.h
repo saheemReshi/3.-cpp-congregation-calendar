@@ -26,9 +26,10 @@ class Venue;
 class VenueManager;
 class CongregationManager;
 class Congregation;
+class Decoder;//this will be used to parse the userInput string and see if date, time etc. are valid or not
+class Calendar;
 struct Event;
 struct Reservation;
-
 
 class Time {
 private:
@@ -157,6 +158,7 @@ public:
     status addCongregation(string name, string type, Date startDate, Date endDate);
     status showCongregations() const;
     status delCongregation(string name);
+    bool congExists(string name) const;
 };
 
 
@@ -195,4 +197,7 @@ public:
     status addVenue(string name, string city, string addr, string state, string postalCode, string country, int capacity);
     status delVenue(string vName, string countryName);//a venue cant be deleted if it has any active or future reservations
     status showVenues(string city, string state, string postalCode, string country) const;
+    status reserveVenue(string vName, string countryName, string congName);
+    status freeVenue(string vName, string countryName, string congName);
 };
+

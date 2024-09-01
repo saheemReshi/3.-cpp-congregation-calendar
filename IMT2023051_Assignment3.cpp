@@ -235,6 +235,20 @@ status CongregationManager::delCongregation(string name){
     return CONG_NOT_FOUND;
 }
 
+bool CongregationManager::congExists(string name) const{
+    //this is a helper method that i use to check if a congregation exists or not in commands like reserveVenue etc.
+    //first I'll iterate through the list of congs and match it with the given name
+    for(auto it=congs.begin(); it!=congs.end();){
+        if(it->getName()==name){
+            return true;
+        }
+        else{
+            it++;
+        }  
+    }
+    return false;
+}
+
 
 //Venue class methods
 
@@ -285,7 +299,9 @@ status VenueManager::addVenue(string name, string city, string addr, string stat
     }
     //now I can directly add
     Venue newVenue=Venue(name,city,addr,state,postalCode,country,capacity);
-    venues.push_back(newVenue);
+    auto it=venues.end()--;
+    venues.insert(it,newVenue);
+    // venues.push_back(newVenue);
     return OK;
 }
 
@@ -303,4 +319,53 @@ status VenueManager::showVenues(string city, string state, string postalCode, st
     cout<<matching<<endl;
     cout<<s;
     return NOPRINT_NEED;
+}
+
+
+status VenueManager::reserveVenue(string vName, string countryName, string congName){
+    /*Note that a venue can be associated with no more than one congregation on a particular date.
+    The congregation and the venue to be reserved must already exist in the system before such 
+    a reservation is allowed.*/
+    
+    //i must check if such a venue and congregation already exist or not. 
+    //if both exist, then i'll complete the task with methods of Venue and CongregationManager classes
+
+    //first checking for the venue and getting its index in the vector of venues
+    bool venueExists=false;
+    for(int i=0; i<venues.size(); i++){
+        if(venues[i].getName()==vName && venues[i].getCountry()==countryName){
+            venueExists=true;
+            break;
+        }
+    }
+    bool congExists=false;
+
+
+}
+
+
+
+
+
+
+
+int main(){//ibrahim said its necessary to make default constructor for VEnues and congr. bcz using a vector --pushback
+    VenueManager a;
+    a.addVenue("j","j","j","j","j","j",89);
+    a.addVenue("a","j","j","j","j","j",89);
+    a.addVenue("f","j","j","j","j","j",89);
+    a.addVenue("s","j","j","j","j","j",89);
+    a.addVenue("dd","j","j","j","j","j",89);
+    a.addVenue("d","j","j","j","j","j",89);
+    a.addVenue("e","j","j","j","j","j",89);
+    a.addVenue("ew","j","j","j","j","j",89);
+    a.addVenue("aa","j","j","j","j","j",89);
+    a.addVenue("ffd","j","j","j","j","j",89);
+    a.addVenue("sde","j","j","j","j","j",89);
+    a.addVenue("ded","j","j","j","j","j",89);
+    a.addVenue("dre","j","j","j","j","j",89);
+    a.addVenue("eret","j","j","j","j","j",89);
+    a.addVenue("ewww","j","j","j","j","j",89);
+    a.showVenues("","","","");
+    return 0;
 }
