@@ -387,7 +387,7 @@ vector<CongVenueResData> CongregationManager::getReservedList(string congName) c
     //this method assumes that the congregation will surely exist
     for(auto cong:congs){
         if(cong.getName()==congName){
-
+            return cong.getReservedList();
         }
     }
 }
@@ -800,9 +800,13 @@ status Calendar::showCongregations() const {
 status Calendar::delCongregation(string name) {
     if(cm.congExists(name)==false) return CONG_NOT_FOUND;
     //here first i'll extract the _reserved vector from this congregation
-
-
-    // cm.delCongregation(name);
+    vector<CongVenueResData> freeCongVenues=cm.getReservedList(name);
+    //now i'll call freeVenue on all these venues for this congregation
+    for(auto it:freeCongVenues){
+        vm.freeVenue(it.name,it.country,name);//all the venues associated with this congr. are getting freed and all the events are being deleted
+    }
+    cm.delCongregation(name);
+    return OK;
 }
 
 status Calendar::addVenue(string name, string addr,string city,  string state, string postalCode, string country, int capacity) {
