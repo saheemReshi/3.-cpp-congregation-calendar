@@ -61,10 +61,37 @@ ostream& operator<<(ostream& os, const Time& time) {
        << (time.min < 10 ? "0" : "") << time.min;
     return os;
 }
+//** Utility functions for date and time */
 
+Date stringToDate(const string &dateStr) {//this function isn't a method of Date class but is used to convert a string to Date
+    int year, month, day;
+    char delimiter;
+
+    istringstream iss(dateStr);
+
+    // Extract year, month, and day from the input string
+    iss >> year >> delimiter >> month >> delimiter >> day;
+
+    // Construct and return the Date object
+    return Date(year, month, day);
+}
+
+Time stringToTime(const string &timeStr) {
+    int hours, minutes;
+    char colon;
+
+    istringstream iss(timeStr);
+
+    // Extract hours and minutes from the input string
+    iss >> hours >> colon >> minutes;
+
+    // Construct and return the Time object
+    return Time(hours, minutes);
+}
 
 
 // Date class method implementations
+
 
 bool Date::isLeapYear(int year) const {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
@@ -1015,6 +1042,149 @@ void Decoder::printCode(status code) {
     // Add other error codes as necessary
 }
 
+
+
+void Decoder::addCongregation(istringstream &iss) {
+    string name, type, startDate, endDate;
+
+    // Parse congregation name
+    iss >> ws;
+    getline(iss, name, '"');
+    getline(iss, name, '"');
+
+    // Parse congregation type
+    iss >> ws;
+    getline(iss, type, '"');
+    getline(iss, type, '"');
+
+    // Parse start date
+    iss >> ws;
+    getline(iss, startDate, '"');
+    getline(iss, startDate, '"');
+
+    // Parse end date
+    iss >> ws;
+    getline(iss, endDate, '"');
+    getline(iss, endDate, '"');
+
+    // Convert strings to Date objects
+    Date start = stringToDate(startDate);
+    Date end = stringToDate(endDate);
+
+    //I need to validate the dates
+    if(start.isValid()==0 || end.isValid()==0 || start>end){
+        printCode(INVALID_DATE_TIME);
+        return;
+    }
+    // Add the congregation through the manager
+    status code = manager.addCongregation(name, type, start, end);
+    printCode(code);
+}
+
+void Decoder::deleteCongregation(istringstream &iss) {
+    string cName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.delCongregation(cName);
+    printCode(code);
+}
+
+void Decoder::addEvent(istringstream &iss) {
+    string congregationName, venueName, venueCountry, dateStr, fromTimeStr, toTimeStr, eventName;
+
+    // Parse congregation name
+    iss >> ws;
+    getline(iss, congregationName, '"');
+    getline(iss, congregationName, '"');
+
+    // Parse venue name
+    iss >> ws;
+    getline(iss, venueName, '"');
+    getline(iss, venueName, '"');
+
+    // Parse venue country
+    iss >> ws;
+    getline(iss, venueCountry, '"');
+    getline(iss, venueCountry, '"');
+
+    // Parse date
+    iss >> ws;
+    getline(iss, dateStr, '"');
+    getline(iss, dateStr, '"');
+
+    // Parse start time
+    iss >> ws;
+    getline(iss, fromTimeStr, '"');
+    getline(iss, fromTimeStr, '"');
+
+    // Parse end time
+    iss >> ws;
+    getline(iss, toTimeStr, '"');
+    getline(iss, toTimeStr, '"');
+
+    // Parse event name
+    iss >> ws;
+    getline(iss, eventName, '"');
+    getline(iss, eventName, '"');
+
+    // Convert strings to Date and Time objects
+    Date date = stringToDate(dateStr);
+    Time fromTime = stringToTime(fromTimeStr);
+    Time toTime = stringToTime(toTimeStr);
+
+    //I need to validate the dates
+    if(date.isValid()==0 || fromTime.isValid()==0 || toTime.isValid()==0 || fromTime>=toTime){
+        printCode(INVALID_DATE_TIME);
+        return;
+    }
+    // Add the event through the manager
+    status code = manager.addEvent(eventName,congregationName, venueName, venueCountry, date, fromTime, toTime);
+    printCode(code);
+}
+
+
+void Decoder::showEvents(istringstream &iss) {
+    string venueName, venueCountry, dateStr;
+
+    // Parse venue name
+    iss >> ws;
+    getline(iss, venueName, '"');
+    getline(iss, venueName, '"');
+
+    // Parse venue country
+    iss >> ws;
+    getline(iss, venueCountry, '"');
+    getline(iss, venueCountry, '"');
+
+    // Parse date
+    iss >> ws;
+    getline(iss, dateStr, '"');
+    getline(iss, dateStr, '"');
+
+    // Convert string to Date object
+    Date date = stringToDate(dateStr);
+
+    //I need to validate the dates
+    if(date.isValid()==0 ){
+        printCode(INVALID_DATE_TIME);
+        return;
+    }
+    // Show events through the manager
+    status code=manager.showEvents(venueName, venueCountry, date);
+    printCode(code);
+}
+
+void Decoder::showCongregations() {
+    manager.showCongregations();
+}
+
+
+
+
+
+/*
 void Decoder::addCongregation(istringstream &iss) {
     string name, type, startDate, endDate;
     iss >> ws;
@@ -1203,7 +1373,7 @@ void Decoder::deleteCongregation(istringstream &iss) {
     printCode(code);
 }
 
-
+*/
 
 
 
