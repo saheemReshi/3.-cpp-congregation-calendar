@@ -116,10 +116,10 @@ public:
     bool isValid() const;
     bool isAdjacent(const Date& other) const;
     Date nextDay() const;//this method will give me the next date,uses chrono inside
+    bool isPast() const;
     //Method to print date
     void printDate() const;
     friend ostream& operator<<(ostream& os, const Date& date);
-
     //operator overloading methods
     bool operator<(const Date& other) const;
     bool operator<=(const Date& other) const;
@@ -130,6 +130,11 @@ public:
 
 };
 
+//these 2 function convert input string to Date and Time
+Date stringToDate(const string &dateStr);
+Time stringToTime(const string &timeStr);
+//this method is for location parsing
+void parseLocation(const string &locationStr, string &address, string &city,string &state, string &postalCode, string &country);
 
 struct Event{
     Date d;

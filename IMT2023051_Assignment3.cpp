@@ -61,7 +61,7 @@ ostream& operator<<(ostream& os, const Time& time) {
        << (time.min < 10 ? "0" : "") << time.min;
     return os;
 }
-//** Utility functions for date and time */
+//** Utility functions for date and time and location parsing*/
 
 Date stringToDate(const string &dateStr) {//this function isn't a method of Date class but is used to convert a string to Date
     int year, month, day;
@@ -88,7 +88,23 @@ Time stringToTime(const string &timeStr) {
     // Construct and return the Time object
     return Time(hours, minutes);
 }
+void parseLocation(const string &locationStr, string &address, string &city,string &state, string &postalCode, string &country) {
+    istringstream iss(locationStr);
+    getline(iss, address, ':');
+    getline(iss, city, ':');
+    getline(iss, state, ':');
+    getline(iss, postalCode, ':');
+    getline(iss, country);
+}
 
+void parseLocation_ShowVenues(const string &locationStr, string &city,string &state, string &postalCode, string &country) {
+    istringstream iss(locationStr);
+    // getline(iss, address, ':');
+    getline(iss, city, ':');
+    getline(iss, state, ':');
+    getline(iss, postalCode, ':');
+    getline(iss, country);
+}
 
 // Date class method implementations
 
@@ -224,7 +240,25 @@ Date Date::nextDay() const {
     return Date(time_out->tm_mday, time_out->tm_mon + 1, time_out->tm_year + 1900);
 }
 
-
+bool Date::isPast() const {
+    // Get current date
+    time_t t = time(0);
+    struct tm *now = localtime(&t);
+    
+    // Compare with current date
+    if (year < (now->tm_year + 1900)) {
+        return true;
+    } else if (year == (now->tm_year + 1900)) {
+        if (month < (now->tm_mon + 1)) {
+            return true;
+        } else if (month == (now->tm_mon + 1)) {
+            if (day < now->tm_mday) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 //Reservation methods
 
@@ -1038,10 +1072,17 @@ void Decoder::printCode(status code) {
     else if (code == INVALID_DATE_TIME) cout << "-1\nError: Invalid date or time" << endl;
     else if (code == CONG_NOT_FOUND) cout << "-1\nError: No such congregation" << endl;
     else if (code == TIME_CONFLICT) cout << "-1\nError: Time slot is occupied" << endl;
+    else if (code == TIME_CONFLICT_EVENT) cout << "-1\nError: Event time slot is occupied" << endl;
+    else if (code == TIME_CONFLICT_EVENT_30MIN) cout << "-1\nError: Event time slot is occupied within 30 minutes interval" << endl;
+    else if (code == INVALID_TIME_LENGTH) cout << "-1\nError: Event duration is less than 30 minutes" << endl;
     else if (code == MEMORY_ERROR) cout << "-1\nError: Out of memory" << endl;
-    // Add other error codes as necessary
+    else if (code == FORMAT_ERROR) cout << "-1\nError: Format error" << endl;
+    else if (code == NOPRINT_NEED) cout << "-1\nError: No print needed" << endl;
+    else if (code == VENUE_MANAGER_RESERVE_VENUE_EXCEPTION) cout << "-1\nError: Exception occurred while reserving venue" << endl;
+    else if (code == DUPLICATE_RESERVATION) cout << "-1\nError: Duplicate reservation" << endl;
+    else if (code == NO_RESERVATION_OR_CONG) cout << "-1\nError: No reservation or congregation found" << endl;
+    else if (code == VENUE_HAS_RESERVATIONS) cout << "-1\nError: Venue has active or future reservations" << endl;
 }
-
 
 
 void Decoder::addCongregation(istringstream &iss) {
@@ -1076,6 +1117,11 @@ void Decoder::addCongregation(istringstream &iss) {
         printCode(INVALID_DATE_TIME);
         return;
     }
+    //i also have to make sure that I never add a congregation to the past
+    if(end.isPast()==true){
+        printCode(INVALID_DATE_TIME);
+        return;
+    }
     // Add the congregation through the manager
     status code = manager.addCongregation(name, type, start, end);
     printCode(code);
@@ -1090,6 +1136,103 @@ void Decoder::deleteCongregation(istringstream &iss) {
     status code = manager.delCongregation(cName);
     printCode(code);
 }
+
+void Decoder::showCongregations() {
+    manager.showCongregations();//returns NOPRINT_NEED 
+}
+
+
+
+void Decoder::addVenue(istringstream &iss) {
+    string vName, loc;
+    int cap;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, loc, '"');
+    getline(iss, loc, '"');
+    iss >> ws >> cap;
+    //here I also need to parse the location string
+    string address, city, state, postalCode, country;
+    parseLocation(loc, address, city, state, postalCode, country);
+    status code = manager.addVenue(vName, address, city, state, postalCode, country, cap);
+    printCode(code);
+}
+
+void Decoder::delVenue(istringstream &iss) {
+    string vName,country;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, country, '"');
+    getline(iss, country, '"');
+
+    status code = manager.delVenue(vName,country);
+    printCode(code);
+}
+
+void Decoder::showVenues(istringstream &iss) {
+    string locationStr, city, state, postalCode, country;
+
+    // Read location string
+    iss >> ws;
+    getline(iss, locationStr, '"');
+    getline(iss, locationStr, '"');
+
+    // Parse the location string into components
+    parseLocation_ShowVenues(locationStr, city, state, postalCode, country);
+
+    // Call the manager's showVenues method
+    manager.showVenues(city, state, postalCode, country);
+}
+
+
+
+void Decoder::reserveVenue(istringstream &iss) {
+    string vName, country, cName;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, country, '"');
+    getline(iss, country, '"');
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.reserveVenue(vName, country, cName);
+    printCode(code);
+}
+
+void Decoder::showReserved(istringstream &iss) {
+    string cName;
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.showReserved(cName);
+    printCode(code);
+}
+
+void Decoder::freeVenue(istringstream &iss) {
+    string vName, country, cName;
+    iss >> ws;
+    getline(iss, vName, '"');
+    getline(iss, vName, '"');
+    iss >> ws;
+    getline(iss, country, '"');
+    getline(iss, country, '"');
+    iss >> ws;
+    getline(iss, cName, '"');
+    getline(iss, cName, '"');
+
+    status code = manager.freeVenue(vName, country, cName);
+    printCode(code);
+}
+
+
 
 void Decoder::addEvent(istringstream &iss) {
     string congregationName, venueName, venueCountry, dateStr, fromTimeStr, toTimeStr, eventName;
@@ -1144,7 +1287,6 @@ void Decoder::addEvent(istringstream &iss) {
     printCode(code);
 }
 
-
 void Decoder::showEvents(istringstream &iss) {
     string venueName, venueCountry, dateStr;
 
@@ -1176,174 +1318,51 @@ void Decoder::showEvents(istringstream &iss) {
     printCode(code);
 }
 
-void Decoder::showCongregations() {
-    manager.showCongregations();
-}
-
-
-
-
-
-/*
-void Decoder::addCongregation(istringstream &iss) {
-    string name, type, startDate, endDate;
-    iss >> ws;
-    getline(iss, name, '"');
-    getline(iss, name, '"');
-    iss >> ws;
-    getline(iss, type, '"');
-    getline(iss, type, '"');
-    iss >> ws >> startDate >> ws >> endDate;
-
-    // Validate dates
-    // Here you should implement date validation logic
-
-    status code = manager.addCongregation(name, type, startDate, endDate);
-    printCode(code);
-}
-
-void Decoder::showCongregations() {
-    manager.showCongregations();
-}
-
-void Decoder::addVenue(istringstream &iss) {
-    string vName, loc;
-    int cap;
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, loc, '"');
-    getline(iss, loc, '"');
-    iss >> ws >> cap;
-
-    status code = manager.addVenue(vName, loc, cap);
-    printCode(code);
-}
-
-void Decoder::showVenues(istringstream &iss) {
-    string location;
-    iss >> ws;
-    getline(iss, location, '"');
-    getline(iss, location, '"');
-
-    manager.showVenues(location);
-}
-
-void Decoder::delVenue(istringstream &iss) {
-    string vName;
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-
-    status code = manager.delVenue(vName);
-    printCode(code);
-}
-
-void Decoder::reserveVenue(istringstream &iss) {
-    string vName, country, cName;
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, country, '"');
-    getline(iss, country, '"');
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-
-    status code = manager.reserveVenue(vName, country, cName);
-    printCode(code);
-}
-
-void Decoder::showReserved(istringstream &iss) {
-    string cName;
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-
-    status code = manager.showReserved(cName);
-    printCode(code);
-}
-
-void Decoder::freeVenue(istringstream &iss) {
-    string vName, country, cName;
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, country, '"');
-    getline(iss, country, '"');
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-
-    status code = manager.freeVenue(vName, country, cName);
-    printCode(code);
-}
-
-void Decoder::addEvent(istringstream &iss) {
-    string cName, vName, vCountry, date, fromTime, toTime, eName;
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, vCountry, '"');
-    getline(iss, vCountry, '"');
-    iss >> ws;
-    getline(iss, date, '"');
-    getline(iss, date, '"');
-    iss >> ws >> fromTime >> ws >> toTime;
-    iss >> ws;
-    getline(iss, eName, '"');
-    getline(iss, eName, '"');
-
-    // Validate date and time format
-    // Here you should implement validation logic
-
-    status code = manager.addEvent(cName, vName, vCountry, date, fromTime, toTime, eName);
-    printCode(code);
-}
-
 void Decoder::delEvent(istringstream &iss) {
-    string cName, vName, vCountry, date, fromTime, eName;
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-    iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, vCountry, '"');
-    getline(iss, vCountry, '"');
-    iss >> ws;
-    getline(iss, date, '"');
-    getline(iss, date, '"');
-    iss >> ws >> fromTime;
-    iss >> ws;
-    getline(iss, eName, '"');
-    getline(iss, eName, '"');
+    string congregationName, venueName, venueCountry, dateStr, fromTimeStr, eventName;
 
-    status code = manager.delEvent(cName, vName, vCountry, date, fromTime, eName);
-    printCode(code);
-}
+    // Parse congregation name
+    iss >> ws;
+    getline(iss, congregationName, '"');
+    getline(iss, congregationName, '"');
 
-void Decoder::showEvents(istringstream &iss) {
-    string vName, vCountry, date;
+    // Parse venue name
     iss >> ws;
-    getline(iss, vName, '"');
-    getline(iss, vName, '"');
-    iss >> ws;
-    getline(iss, vCountry, '"');
-    getline(iss, vCountry, '"');
-    iss >> ws;
-    getline(iss, date, '"');
-    getline(iss, date, '"');
+    getline(iss, venueName, '"');
+    getline(iss, venueName, '"');
 
-    status code = manager.showEvents(vName, vCountry, date);
+    // Parse venue country
+    iss >> ws;
+    getline(iss, venueCountry, '"');
+    getline(iss, venueCountry, '"');
+
+    // Parse date
+    iss >> ws;
+    getline(iss, dateStr, '"');
+    getline(iss, dateStr, '"');
+
+    // Parse start time
+    iss >> ws;
+    getline(iss, fromTimeStr, '"');
+    getline(iss, fromTimeStr, '"');
+
+    // Parse event name
+    iss >> ws;
+    getline(iss, eventName, '"');
+    getline(iss, eventName, '"');
+
+    // Convert strings to Date and Time objects
+    Date date = stringToDate(dateStr);
+    Time fromTime = stringToTime(fromTimeStr);
+
+    // Validate the date and time
+    if (date.isValid() == 0 || fromTime.isValid() == 0) {
+        printCode(INVALID_DATE_TIME);
+        return;
+    }
+
+    // Delete the event through the manager
+    status code = manager.deleteEvent(congregationName, venueName, venueCountry, date, fromTime, eventName);
     printCode(code);
 }
 
@@ -1362,177 +1381,4 @@ void Decoder::showCalendar(istringstream &iss) {
     status code = manager.showCalendar(cName, vName, vCountry);
     printCode(code);
 }
-
-void Decoder::deleteCongregation(istringstream &iss) {
-    string cName;
-    iss >> ws;
-    getline(iss, cName, '"');
-    getline(iss, cName, '"');
-
-    status code = manager.deleteCongregation(cName);
-    printCode(code);
-}
-
-*/
-
-
-
-/*
-
-
-int main() {
-    // Create a Calendar object
-    Calendar cal;
-
-    // Test Case 1: Add Congregations
-    cout << "Adding Congregations:" << endl;
-    cout << "MadMax Tour India 2024: " << cal.addCongregation("MadMax Tour India 2024", "Concert", Date(26, 7, 2024), Date(29, 7, 2024)) << endl;
-    cout << "Paris Olympics 2024: " << cal.addCongregation("Paris Olympics 2024", "Games", Date(26, 9, 2024), Date(5, 10, 2024)) << endl;
-    cout << "Justin Bieber Tour: " << cal.addCongregation("Justin Bieber Tour", "Concert", Date(10, 10, 2024), Date(12, 10, 2024)) << endl;  // Adjusted to a valid date range
-    cout << "Summer Fest 2025: " << cal.addCongregation("Summer Fest 2025", "Concert", Date(1, 6, 2025), Date(15, 6, 2025)) << endl;
-    cout << "G20 US 2026: " << cal.addCongregation("G20 US 2026", "Convention", Date(28, 2, 2026), Date(29, 2, 2026)) << endl;  // Adjusted to a valid leap year date
-    cout << endl;
-
-    // Test Case 2: Show Congregations
-    cout << "Showing Congregations:" << endl;
-    cal.showCongregations();
-    cout << endl;
-
-    // Test Case 3: Add Venues
-    cout << "Adding Venues:" << endl;
-    cout << "Stade de France: " << cal.addVenue("Stade de France", "Bandra-East", "Saint-Denis", "Ile-de-France", "932100", "France", 80000) << endl;
-    cout << "Wembley Stadium: " << cal.addVenue("Wembley Stadium", "Kormangala", "London", "England", "HA9000", "UK", 90000) << endl;
-    cout << "Olympic Stadium: " << cal.addVenue("Olympic Stadium", "JPNagar", "Montreal", "Quebec", "H1V3N7", "Canada", 60000) << endl;
-    cout << endl;
-
-    // Test Case 4: Show Venues based on Location
-    cout << "Showing Venues in London, England, UK:" << endl;
-    cal.showVenues("London", "England", "", "UK");
-    cout << endl;
-
-    // Test Case 5: Reserve Venue
-    cout << "Reserving Venues for Paris Olympics 2024:" << endl;
-    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;
-    cout << "Stade de France, France: " << cal.reserveVenue("Stade de France", "France", "Paris Olympics 2024") << endl;  // Expecting failure due to duplicate reservation
-    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "Paris Olympics 2024") << endl;
-    cout << "Wembley Stadium, UK: " << cal.reserveVenue("Wembley Stadium", "UK", "MadMax Tour India 2024") << endl;
-    cout << endl;
-
-    // Test Case 6: Show Reservations for a Non-Existent Congregation
-    cout << "Showing Reservations for Mars Olympics 1985:" << endl;
-    cal.showReserved("Mars Olympics 1985");
-    cout << endl;
-
-    // Test Case 7: Show Reservations for an Existing Congregation
-    cout << "Showing Reservations for Paris Olympics 2024:" << endl;
-    cal.showReserved("Paris Olympics 2024");
-    cout << endl;
-
-    // Test Case 8: Add Events
-    cout << "Adding Events for Paris Olympics 2024 at Stade de France:" << endl;
-    cout << "Event 1: " << cal.addEvent("Opening Ceremony", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(9, 0), Time(11, 0)) << endl;
-    cout << "Event 2: " << cal.addEvent("Athletics - Morning Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(11, 15), Time(13, 30)) << endl;
-    cout << "Event 3: " << cal.addEvent("Athletics - Night Session", "Paris Olympics 2024", "Stade de France", "France", Date(27, 9, 2024), Time(20, 30), Time(23, 45)) << endl;
-    cout << "Event 4: " << cal.addEvent("Football - Quarter Final", "Paris Olympics 2024", "Stade de France", "France", Date(28, 9, 2024), Time(0, 0), Time(2, 0)) << endl;
-    cout << endl;
-
-    // Test Case 9: Show Events for a Specific Date
-    cout << "Showing Events for Stade de France, France on 2024-09-27:" << endl;
-    cal.showEvents("Stade de France", "France", Date(27, 9, 2024));
-    cout << endl;
-
-    return 0;
-}
-
-
-
-
-
-int main() {
-    // Create a Calendar object
-    Calendar cal;
-
-    // Test Case 1: Add Congregations
-    std::cout << "Adding Congregations:" << std::endl;
-    std::cout << "Paris Olympics 2024: " 
-              << cal.addCongregation("Paris Olympics 2024", "Games", Date(1, 10, 2024), Date(28, 10, 2024)) << std::endl;
-    std::cout << "U-17 Football World Cup: " 
-              << cal.addCongregation("U-17 Football World Cup", "Games", Date(1, 11, 2024), Date(15, 11, 2024)) << std::endl;
-    std::cout << "Summer Fest: " 
-              << cal.addCongregation("Summer Fest", "Concert", Date(1, 11, 2024), Date(5, 11, 2024)) << std::endl;
-    std::cout << std::endl;
-
-    // Test Case 2: Show Congregations
-    std::cout << "Showing Congregations:" << std::endl;
-    cal.showCongregations();
-    std::cout << std::endl;
-
-    // Test Case 3: Add Venues
-    std::cout << "Adding Venues:" << std::endl;
-    std::cout << "Paris stadium: " 
-              << cal.addVenue("Paris stadium", "ParisStadium", "Paris", "Ile-de-France", "932100", "France", 20000) << std::endl;
-    std::cout << "Lyon stadium: " 
-              << cal.addVenue("Lyon stadium", "LyonStadium", "Lyon", "Auvergne-Rhône-Alpes", "69001", "France", 10000) << std::endl;
-    std::cout << "Parc des Princes: " 
-              << cal.addVenue("Parc des Princes", "FootballStadium", "Paris", "Ile-de-France", "75016", "France", 50000) << std::endl;
-    std::cout << std::endl;
-
-    // Test Case 4: Show Venues based on Location
-    std::cout << "Showing Venues in Paris, Ile-de-France, France:" << std::endl;
-    cal.showVenues("Paris", "Ile-de-France", "", "France");
-    std::cout << std::endl;
-
-    // Test Case 5: Reserve Venue
-    std::cout << "Reserving Venues for Paris Olympics 2024:" << std::endl;
-    std::cout << "Paris stadium, France: " 
-              << cal.reserveVenue("Paris stadium", "France", "Paris Olympics 2024") << std::endl;
-    std::cout << "Lyon stadium, France: " 
-              << cal.reserveVenue("Lyon stadium", "France", "Paris Olympics 2024") << std::endl;
-    std::cout << "Parc des Princes, France: " 
-              << cal.reserveVenue("Parc des Princes", "France", "U-17 Football World Cup") << std::endl;
-    std::cout << std::endl;
-
-    // Test Case 6: Show Reservations for an Existing Congregation
-    std::cout << "Showing Reservations for Paris Olympics 2024:" << std::endl;
-    cal.showReserved("Paris Olympics 2024");
-    std::cout << std::endl;
-
-    // Test Case 7: Free a Venue
-    std::cout << "Freeing Lyon stadium for Paris Olympics 2024:" << std::endl;
-    std::cout << "Result: " 
-              << cal.freeVenue("Lyon stadium", "France", "Paris Olympics 2024") << std::endl;
-    std::cout << std::endl;
-
-    // Test Case 8: Show Reservations for Paris Olympics 2024 After Freeing a Venue
-    std::cout << "Showing Reservations for Paris Olympics 2024 (After Freeing Lyon stadium):" << std::endl;
-    cal.showReserved("Paris Olympics 2024");
-    std::cout << std::endl;
-
-    // Test Case 9: Add Events to Venues
-    std::cout << "Adding Events to Paris stadium for Paris Olympics 2024:" << std::endl;
-    std::cout << "Javelin Throw (12:00 - 15:00, 2024-10-01): " 
-              << cal.addEvent( "Javelin Throw","Paris Olympics 2024", "Paris stadium", "France", Date(1, 10, 2024), Time(12, 0), Time(15, 0)) << std::endl;
-    std::cout << "Pole Vault (18:00 - 21:00, 2024-10-01): " 
-              << cal.addEvent("Pole Vault","Paris Olympics 2024", "Paris stadium", "France", Date(1, 10, 2024), Time(18, 0), Time(21, 0)) << std::endl;
-    std::cout << "5000m Mens (12:00 - 15:00, 2024-10-02): " 
-              << cal.addEvent("5000m Mens","Paris Olympics 2024", "Paris stadium", "France", Date(2, 10, 2024), Time(12, 0), Time(15, 0)) << std::endl;
-    std::cout << "Spain vs England (18:00 - 21:00, 2024-11-02): " 
-              << cal.addEvent("Spain vs England","U-17 Football World Cup", "Parc des Princes", "France", Date(2, 11, 2024), Time(18, 0), Time(21, 0)) << std::endl;
-    std::cout << std::endl;
-
-    // Test Case 10: Show Events for a Venue on a Specific Date
-    std::cout << "Showing Events for Paris stadium, France on 2024-10-01:" << std::endl;
-    cal.showEvents("Paris stadium", "France", Date(1, 10, 2024));
-    std::cout << std::endl;
-
-    // Test Case 11: Show Events for Parc des Princes, France on 2024-11-02
-    std::cout << "Showing Events for Parc des Princes, France on 2024-11-02:" << std::endl;
-    cal.showEvents("Parc des Princes", "France", Date(2, 11, 2024));
-    std::cout << std::endl;
-
-    return 0;
-}
-*/
-
-
 
