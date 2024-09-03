@@ -73,7 +73,7 @@ Date stringToDate(const string &dateStr) {//this function isn't a method of Date
     iss >> year >> delimiter >> month >> delimiter >> day;
 
     // Construct and return the Date object
-    return Date(year, month, day);
+    return Date(day, month,year);
 }
 
 Time stringToTime(const string &timeStr) {
@@ -229,9 +229,7 @@ Date Date::nextDay() const {
 
     // Convert to time_t (this represents time in seconds since the epoch)
     std::time_t time_temp = std::mktime(&time_in);
-
-    //  Add one day using chrono
-    time_temp += std::chrono::hours(24).count(); // Add 24 hours
+    time_temp += 24 * 3600;
 
     //  Convert back to std::tm
     std::tm* time_out = std::localtime(&time_temp);
@@ -592,21 +590,21 @@ status Venue::addEvent(string eName,string congName, Date d, Time from, Time to)
         prev=current;
         current=current->next;
     }
-    // cout<<"In Venue::addEvent"<<endl;
-        // cout<<"move on condn"<<endl;
+    //now current either has date d or >d or current is null
+
     while(current!=nullptr){//here I dont need to break out if date >d bcz till then if event isn't inserted, TIME_CONFLICT will be retruned
-        if(current->e<s){
-            //move on condn
+        if(current->e<s && (current->d==d)){
+            //move on condn//only move on if current is on date d
             prev=current;
             current=current->next; 
         }
-        else if(e>=current->s && current->e>=s){
+        else if(e>=current->s && current->e>=s && current->d==d){
             delete newEvent;
             return TIME_CONFLICT_EVENT;
         }
         else{
             //here I'll insert after checking if 30 min time diff bw prev and current events
-            if(prev->timeGap_30(*newEvent)==false || current->timeGap_30(*newEvent)==false){
+            if((prev && prev->timeGap_30(*newEvent)==false) || current->timeGap_30(*newEvent)==false){
                 delete newEvent;
                 return TIME_CONFLICT_EVENT_30MIN;
             }
@@ -795,7 +793,7 @@ status Venue::showCalendar(const string& congName, const Date& startDate, const 
         }
 
         // Move to the next date
-        currentDate = currentDate.nextDay(); // Assuming you have a method to get the next day
+        currentDate = currentDate.nextDay(); 
     }
     return NOPRINT_NEED;
 }
@@ -839,7 +837,7 @@ status VenueManager::showVenues(string city, string state, string postalCode, st
     for(auto v:venues){
         if((city=="" || city==v.getCity()) && (state=="" || state==v.getState()) && (postalCode=="" || postalCode==v.getPostalCode()) && (country=="" || country==v.getCountry())){
             matching++;
-            string temp=v.getName()+" "+v.getCity()+":"+v.getState()+":"+v.getState()+":"+v.getPostalCode()+":"+v.getCountry()+" "+to_string(v.getCapacity())+"\n";
+            string temp=v.getName()+" "+v.getAddr()+":"+v.getCity()+":"+v.getState()+":"+v.getPostalCode()+":"+v.getCountry()+" "+to_string(v.getCapacity())+"\n";
             s+=temp;
         }
     }
@@ -1077,7 +1075,7 @@ void Decoder::printCode(status code) {
     else if (code == INVALID_TIME_LENGTH) cout << "-1\nError: Event duration is less than 30 minutes" << endl;
     else if (code == MEMORY_ERROR) cout << "-1\nError: Out of memory" << endl;
     else if (code == FORMAT_ERROR) cout << "-1\nError: Format error" << endl;
-    else if (code == NOPRINT_NEED) cout << "-1\nError: No print needed" << endl;
+    else if (code == NOPRINT_NEED) cout <<"";
     else if (code == VENUE_MANAGER_RESERVE_VENUE_EXCEPTION) cout << "-1\nError: Exception occurred while reserving venue" << endl;
     else if (code == DUPLICATE_RESERVATION) cout << "-1\nError: Duplicate reservation" << endl;
     else if (code == NO_RESERVATION_OR_CONG) cout << "-1\nError: No reservation or congregation found" << endl;
@@ -1111,9 +1109,10 @@ void Decoder::addCongregation(istringstream &iss) {
     // Convert strings to Date objects
     Date start = stringToDate(startDate);
     Date end = stringToDate(endDate);
-
+    // cout<<start<<endl<<end<<endl;
     //I need to validate the dates
     if(start.isValid()==0 || end.isValid()==0 || start>end){
+        // cout<<"hoal"<<endl;
         printCode(INVALID_DATE_TIME);
         return;
     }
