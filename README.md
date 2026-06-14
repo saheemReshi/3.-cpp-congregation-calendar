@@ -1,7 +1,6 @@
 # Congregation calendar in C++
 
 **Design Document & System Overview**
-Roll No: IMT2023051
 
 ---
 
